@@ -151,8 +151,91 @@ function ScheduleCard({ placementPeriod, lesson, periods, subjects, teachers }: 
 }
 
 function Assignments({ project }: { project: SavedScheduleProfile }) {
-  const rows = project.teachers.flatMap((teacher) => (teacher.weeklyHoursAssignments ?? []).map((assignment) => ({ teacher, assignment })));
-  return <section><h2 className="mb-3 text-xl font-black">إسناد الأقسام</h2><div className="space-y-2">{rows.length ? rows.map(({ teacher, assignment }) => { const classGroup = project.classes.find((item) => item.id === (assignment.classGroupId || assignment.classId)); const subject = project.subjects.find((item) => item.id === assignment.subjectId); return <article key={assignment.id} className="rounded-2xl bg-white p-3 shadow-sm"><b>{classGroup?.code ?? 'قسم'}</b><p className="text-xs text-slate-500">{subject?.name ?? 'مادة'} · {teacher.name}</p><span className="text-[10px] font-black text-[#20518D]">{assignment.weeklyHours ?? assignment.hours ?? 0} ساعات/أسبوع</span></article>; }) : <Empty text="لا توجد إسنادات." />}</div></section>;
+  const teacherCards = project.teachers.map((teacher) => {
+    const assignments = (teacher.weeklyHoursAssignments ?? [])
+      .map((assignment) => {
+        const classGroupId = assignment.classGroupId || assignment.classId || '';
+        const weeklyHours = Number(assignment.weeklyHours ?? assignment.hours ?? 0) || 0;
+        const classGroup = project.classes.find((item) => item.id === classGroupId);
+        const subject = project.subjects.find((item) => item.id === assignment.subjectId);
+        return { assignment, classGroup, subject, weeklyHours };
+      })
+      .filter((item) => item.classGroup && item.weeklyHours > 0);
+
+    const totalHours = assignments.reduce((sum, item) => sum + item.weeklyHours, 0);
+    return { teacher, assignments, totalHours };
+  });
+
+  const assignedTeachers = teacherCards.filter((item) => item.assignments.length > 0);
+  const unassignedTeachers = teacherCards.filter((item) => item.assignments.length === 0);
+  const totalHours = assignedTeachers.reduce((sum, item) => sum + item.totalHours, 0);
+
+  return (
+    <section>
+      <div className="mb-3 rounded-2xl bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black">إسناد الأقسام</h2>
+            <p className="mt-1 text-[11px] text-slate-500">كل أستاذ والأقسام المسندة إليه وعدد الساعات الأسبوعية.</p>
+          </div>
+          <div className="shrink-0 rounded-xl bg-emerald-50 px-3 py-2 text-center">
+            <b className="block text-lg font-black text-emerald-700">{totalHours}</b>
+            <span className="text-[9px] font-bold text-emerald-700">ساعة/أسبوع</span>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-center text-[10px] font-bold">
+          <div className="rounded-xl bg-slate-50 p-2">الأساتذة المسندون <b className="text-[#20518D]">{assignedTeachers.length}</b></div>
+          <div className="rounded-xl bg-slate-50 p-2">مجموع الأساتذة <b className="text-[#20518D]">{project.teachers.length}</b></div>
+        </div>
+      </div>
+
+      {assignedTeachers.length > 0 && (
+        <div className="space-y-3">
+          {assignedTeachers.map(({ teacher, assignments, totalHours: teacherTotal }) => (
+            <article key={teacher.id} className="overflow-hidden rounded-2xl bg-white shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b bg-[#123E70] p-3 text-white">
+                <div className="min-w-0">
+                  <b className="block truncate">{teacher.name}</b>
+                  {teacher.code ? <span className="text-[9px] text-white/70">{teacher.code}</span> : null}
+                </div>
+                <div className="shrink-0 rounded-xl bg-white/15 px-3 py-1.5 text-center">
+                  <b className="block text-base">{teacherTotal}</b>
+                  <span className="text-[8px] text-white/75">ساعة/أسبوع</span>
+                </div>
+              </div>
+
+              <div className="divide-y divide-slate-100">
+                {assignments.map(({ assignment, classGroup, subject }) => (
+                  <div key={assignment.id} className="flex items-center justify-between gap-3 p-3">
+                    <div className="min-w-0">
+                      <b className="block truncate text-sm text-slate-900">{classGroup?.code ?? 'قسم'}</b>
+                      <span className="block truncate text-[10px] text-slate-500">{classGroup?.name ?? ''}</span>
+                      {subject?.name ? <span className="mt-1 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-[#20518D]">{subject.name}</span> : null}
+                    </div>
+                    <div className="shrink-0 rounded-xl bg-amber-50 px-3 py-2 text-center">
+                      <b className="block text-base text-amber-700">{Number(assignment.weeklyHours ?? assignment.hours ?? 0)}</b>
+                      <span className="text-[8px] font-bold text-amber-700">ساعات</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {unassignedTeachers.length > 0 && (
+        <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+          <h3 className="mb-2 text-sm font-black text-slate-700">أساتذة بدون إسناد</h3>
+          <div className="flex flex-wrap gap-2">
+            {unassignedTeachers.map(({ teacher }) => <span key={teacher.id} className="rounded-full bg-slate-100 px-3 py-1.5 text-[10px] font-bold text-slate-500">{teacher.name}</span>)}
+          </div>
+        </div>
+      )}
+
+      {assignedTeachers.length === 0 && unassignedTeachers.length === 0 ? <Empty text="لا توجد بيانات للأساتذة." /> : null}
+    </section>
+  );
 }
 
 function TeacherPlan({ project, teachers, teacherId, setTeacherId }: { project: SavedScheduleProfile; teachers: Teacher[]; teacherId: string; setTeacherId: (value: string) => void }) {
