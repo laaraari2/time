@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { ChevronRight, RefreshCw, School, Users, BookOpen, Clock3 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
 import type { SavedScheduleProfile } from '../../types';
@@ -13,6 +14,7 @@ export default function MobileStructure() {
     setLoading(true);
     try {
       const response = await fetch('/api/timetable/profiles', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Failed to load profiles: ${response.status}`);
       const data: unknown = await response.json();
       const profiles = Array.isArray(data) ? (data as SavedScheduleProfile[]) : [];
       setProfile(profiles[0] ?? null);
@@ -23,14 +25,17 @@ export default function MobileStructure() {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    void supabase.auth.getSession().then(({ data }) => { if (data.session) void load(); else setLoading(false); });
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) void load();
+      else setLoading(false);
+    });
   }, []);
 
   const groups = useMemo(() => {
     if (!profile) return [];
     const map = new Map<string, SavedScheduleProfile['classes']>();
     for (const item of profile.classes) {
-      const level = item.level || item.grade || 'أقسام';
+      const level = item.gradeLevel || 'أقسام';
       const list = map.get(level) ?? [];
       list.push(item);
       map.set(level, list);
@@ -74,5 +79,5 @@ export default function MobileStructure() {
   </main>;
 }
 
-function Stat({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) { return <div className="rounded-2xl bg-white p-3 text-center shadow-sm"><span className="mx-auto mb-1 block w-fit text-[#20518D]">{icon}</span><b className="block text-lg">{value}</b><span className="text-[9px] font-bold text-slate-500">{label}</span></div>; }
-function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) { return <div className="rounded-xl bg-slate-50 p-2"><div className="flex items-center gap-1 text-[8px] font-bold text-slate-400"><span className="h-3 w-3">{icon}</span>{label}</div><p className="mt-1 text-[10px] font-bold text-slate-700">{value}</p></div>; }
+function Stat({ icon, value, label }: { icon: ReactNode; value: number; label: string }) { return <div className="rounded-2xl bg-white p-3 text-center shadow-sm"><span className="mx-auto mb-1 block w-fit text-[#20518D]">{icon}</span><b className="block text-lg">{value}</b><span className="text-[9px] font-bold text-slate-500">{label}</span></div>; }
+function Info({ icon, label, value }: { icon: ReactNode; label: string; value: string }) { return <div className="rounded-xl bg-slate-50 p-2"><div className="flex items-center gap-1 text-[8px] font-bold text-slate-400"><span className="h-3 w-3">{icon}</span>{label}</div><p className="mt-1 text-[10px] font-bold text-slate-700">{value}</p></div>; }
