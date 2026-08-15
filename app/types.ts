@@ -17,6 +17,9 @@ export interface Teacher {
   // Teachers may teach any number of periods in a day as long as there is no real conflict.
   maxHoursPerDay?: number;
 
+  // Weekly assignments used to calculate required vs scheduled hours.
+  weeklyHoursAssignments?: WeeklyHoursAssignment[];
+
   // Subjects taught by this teacher
   subjectIds: string[];
 
