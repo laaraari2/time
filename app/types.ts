@@ -41,6 +41,10 @@ export interface WeeklyHoursAssignment {
   subjectId: string;
   classGroupId: string;
   weeklyHours: number;
+
+  // Legacy aliases kept for compatibility with older saved projects.
+  classId?: string;
+  hours?: number;
 }
 
 export interface ClassGroup {
