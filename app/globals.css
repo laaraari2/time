@@ -1,1 +1,73 @@
 @import "tailwindcss";
+
+/* ==========================================================
+   Mobile-first polish
+   The desktop interface stays unchanged; these rules improve
+   touch targets, safe areas, scrolling and small-screen forms.
+   ========================================================== */
+
+:root {
+  --mobile-bottom-space: env(safe-area-inset-bottom, 0px);
+  --mobile-top-space: env(safe-area-inset-top, 0px);
+}
+
+html {
+  min-width: 320px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+select,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS Safari from zooming when focusing form controls. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Keep horizontally dense toolbars usable with a finger. */
+  [class*="overflow-x-auto"] {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  [class*="overflow-x-auto"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The timetable itself is intentionally scrollable horizontally. */
+  table {
+    touch-action: pan-x pan-y;
+  }
+
+  /* Give mobile dialogs/cards a little breathing room around notches. */
+  [role="dialog"] {
+    padding-bottom: max(0.75rem, var(--mobile-bottom-space));
+  }
+
+  /* Comfortable touch targets for normal application controls. */
+  main button:not([aria-hidden="true"]) {
+    touch-action: manipulation;
+  }
+}
+
+/* Safe-area helper for any fixed bottom UI added later. */
+.mobile-safe-bottom {
+  padding-bottom: max(0.75rem, var(--mobile-bottom-space));
+}
