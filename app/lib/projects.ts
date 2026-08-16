@@ -44,10 +44,38 @@ function mapProject(row: ProjectRow): ProjectRecord {
   };
 }
 
+function mapRpcProject(value: unknown): ProjectRecord | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as Record<string, unknown>;
+  if (typeof row.id !== 'string' || typeof row.name !== 'string') return null;
+  return {
+    id: row.id,
+    name: row.name,
+    createdAt: String(row.createdAt ?? ''),
+    updatedAt: String(row.updatedAt ?? ''),
+    config: row.config ?? {},
+    subjects: row.subjects ?? [],
+    teachers: row.teachers ?? [],
+    classes: row.classes ?? [],
+    rooms: row.rooms ?? [],
+    lessons: row.lessons ?? [],
+    placements: row.placements ?? [],
+  };
+}
+
 export async function listProjects(): Promise<ProjectRecord[]> {
   const { supabase, user } = await requireSupabaseUser();
   if (!user) return [];
 
+  // This RPC is the authorization boundary for mobile access. Owners receive
+  // their full project; teachers receive only their own teacher/lessons/classes.
+  const { data: accessibleProjects, error: rpcError } = await supabase.rpc('get_accessible_projects');
+  if (!rpcError && Array.isArray(accessibleProjects)) {
+    return accessibleProjects.map(mapRpcProject).filter((item): item is ProjectRecord => Boolean(item));
+  }
+
+  // Keep the manager experience working if the new SQL function has not yet
+  // been applied to Supabase. Teachers will become available after migration.
   const { data, error } = await supabase
     .from('projects')
     .select('id,name,created_at,updated_at,config,subjects,teachers,classes,rooms,lessons,placements')
@@ -55,6 +83,20 @@ export async function listProjects(): Promise<ProjectRecord[]> {
 
   if (error) throw error;
   return ((data ?? []) as ProjectRow[]).map(mapProject);
+}
+
+export async function getTimetableUserRole(): Promise<'manager' | 'teacher' | 'none'> {
+  const { supabase, user } = await requireSupabaseUser();
+  if (!user) return 'none';
+
+  const { data, error } = await supabase.rpc('get_timetable_user_role');
+  if (!error && (data === 'manager' || data === 'teacher' || data === 'none')) {
+    return data;
+  }
+
+  // Fallback for existing databases before the migration is applied.
+  const { data: ownProjects } = await supabase.from('projects').select('id').limit(1);
+  return ownProjects && ownProjects.length > 0 ? 'manager' : 'none';
 }
 
 export async function getProject(id: string) {
