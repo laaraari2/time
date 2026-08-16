@@ -65,7 +65,7 @@ export default function MobileV2() {
           <CalendarDays className="mx-auto h-12 w-12 text-[#20518D]" />
           <h1 className="mt-4 text-2xl font-black">TimeTables Mobile</h1>
           <p className="mt-2 text-sm text-slate-500">نفس حساب وبيانات نسخة الكمبيوتر.</p>
-          <a href="/" className="mt-6 block rounded-2xl bg-[#20518D] p-4 font-black text-white">تسجيل الدخول</a>
+          <a href="/mobile-v2/login" className="mt-6 block rounded-2xl bg-[#20518D] p-4 font-black text-white">تسجيل الدخول</a>
         </div>
       </main>
     );
@@ -200,22 +200,14 @@ function Assignments({ project }: { project: SavedScheduleProfile }) {
                 </div>
                 <div className="shrink-0 rounded-xl bg-white/15 px-3 py-1.5 text-center">
                   <b className="block text-base">{teacherTotal}</b>
-                  <span className="text-[8px] text-white/75">ساعة/أسبوع</span>
+                  <span className="text-[8px] text-white/75">ساعات</span>
                 </div>
               </div>
-
-              <div className="divide-y divide-slate-100">
-                {assignments.map(({ assignment, classGroup, subject }) => (
-                  <div key={assignment.id} className="flex items-center justify-between gap-3 p-3">
-                    <div className="min-w-0">
-                      <b className="block truncate text-sm text-slate-900">{classGroup?.code ?? 'قسم'}</b>
-                      <span className="block truncate text-[10px] text-slate-500">{classGroup?.name ?? ''}</span>
-                      {subject?.name ? <span className="mt-1 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-[#20518D]">{subject.name}</span> : null}
-                    </div>
-                    <div className="shrink-0 rounded-xl bg-amber-50 px-3 py-2 text-center">
-                      <b className="block text-base text-amber-700">{Number(assignment.weeklyHours ?? assignment.hours ?? 0)}</b>
-                      <span className="text-[8px] font-bold text-amber-700">ساعات</span>
-                    </div>
+              <div className="divide-y">
+                {assignments.map(({ assignment, classGroup, subject, weeklyHours }, index) => (
+                  <div key={`${teacher.id}-${assignment.classGroupId || assignment.classId || index}`} className="flex items-center justify-between gap-2 p-3">
+                    <div className="min-w-0"><b className="block text-sm">{classGroup?.code ?? classGroup?.name ?? 'قسم'}</b><span className="text-[10px] text-slate-500">{subject?.name ?? 'مادة غير محددة'}</span></div>
+                    <span className="shrink-0 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-black text-[#20518D]">{weeklyHours} س</span>
                   </div>
                 ))}
               </div>
@@ -225,27 +217,23 @@ function Assignments({ project }: { project: SavedScheduleProfile }) {
       )}
 
       {unassignedTeachers.length > 0 && (
-        <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
-          <h3 className="mb-2 text-sm font-black text-slate-700">أساتذة بدون إسناد</h3>
-          <div className="flex flex-wrap gap-2">
-            {unassignedTeachers.map(({ teacher }) => <span key={teacher.id} className="rounded-full bg-slate-100 px-3 py-1.5 text-[10px] font-bold text-slate-500">{teacher.name}</span>)}
-          </div>
-        </div>
+        <div className="mt-3 rounded-2xl bg-white p-4 shadow-sm"><h3 className="font-black">أساتذة بدون إسناد</h3><div className="mt-2 flex flex-wrap gap-2">{unassignedTeachers.map(({ teacher }) => <span key={teacher.id} className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-700">{teacher.name}</span>)}</div></div>
       )}
-
-      {assignedTeachers.length === 0 && unassignedTeachers.length === 0 ? <Empty text="لا توجد بيانات للأساتذة." /> : null}
     </section>
   );
 }
 
 function TeacherPlan({ project, teachers, teacherId, setTeacherId }: { project: SavedScheduleProfile; teachers: Teacher[]; teacherId: string; setTeacherId: (value: string) => void }) {
-  const teacher = teachers.find((item) => item.id === teacherId);
-  const lessons = project.lessons.filter((lesson) => lesson.teacherId === teacherId);
-  return <section><div className="rounded-2xl bg-white p-3 shadow-sm"><label className="mb-2 block text-xs font-black" htmlFor="mobile-teacher">الأستاذ</label><select id="mobile-teacher" value={teacherId} onChange={(event) => setTeacherId(event.target.value)} className="w-full rounded-xl border p-3 font-bold">{teachers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div><div className="my-3 rounded-2xl bg-white p-4"><h2 className="font-black">مخطط {teacher?.name ?? 'الأستاذ'}</h2><p className="mt-1 text-xs text-slate-500">{lessons.length} حصص مسجلة في المشروع.</p></div>{lessons.map((lesson) => { const subject = project.subjects.find((item) => item.id === lesson.subjectId); const classGroup = project.classes.find((item) => item.id === lesson.classGroupId); return <article key={lesson.id} className="mb-2 rounded-2xl bg-white p-3 shadow-sm"><b>{subject?.name ?? 'مادة'}</b><p className="text-xs text-slate-500">{classGroup?.code ?? 'قسم'}</p></article>; })}</section>;
+  const teacher = teachers.find((item) => item.id === teacherId) ?? teachers[0];
+  const rows = teacher ? project.placements.map((placement) => ({ placement, lesson: project.lessons.find((lesson) => lesson.id === placement.lessonId) })).filter(({ lesson }) => lesson?.teacherId === teacher.id).sort((a, b) => a.placement.dayIndex - b.placement.dayIndex || a.placement.periodIndex - b.placement.periodIndex) : [];
+  return <section><div className="rounded-2xl bg-white p-3 shadow-sm"><label htmlFor="mobile-teacher" className="mb-2 block text-xs font-black">الأستاذ</label><select id="mobile-teacher" value={teacher?.id ?? ''} onChange={(event) => setTeacherId(event.target.value)} className="w-full rounded-xl border border-slate-200 p-3 text-sm font-bold">{teachers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div><div className="my-3 flex items-center justify-between"><h2 className="text-lg font-black">مخطط الأستاذ</h2><span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black text-[#20518D]">{rows.length} حصص</span></div>{rows.length === 0 ? <Empty text="لا توجد حصص مبرمجة لهذا الأستاذ." /> : <div className="space-y-2">{rows.map(({ placement, lesson }) => { const subject = project.subjects.find((item) => item.id === lesson?.subjectId); const classGroup = project.classes.find((item) => item.id === lesson?.classGroupId); const period = project.config.periods[placement.periodIndex]; return <article key={placement.id} className="rounded-2xl bg-white p-3 shadow-sm"><b>{subject?.name ?? 'مادة'}</b><p className="mt-1 text-[10px] text-slate-500">{classGroup?.code ?? 'قسم'} · {project.config.days[placement.dayIndex] ?? fallbackDays[placement.dayIndex] ?? ''} · {period?.startTime ?? ''}</p></article>; })}</div>}</section>;
 }
 
 function Structure({ project }: { project: SavedScheduleProfile }) {
-  return <section><h2 className="mb-3 text-xl font-black">بنية الأقسام</h2><div className="grid grid-cols-2 gap-2">{project.classes.map((classGroup) => <article key={classGroup.id} className="rounded-2xl bg-white p-4 shadow-sm"><School className="mb-2 h-5 w-5 text-[#20518D]" /><b>{classGroup.code}</b><p className="mt-1 text-[10px] text-slate-500">{classGroup.name}</p><p className="mt-2 text-[10px] font-bold">{classGroup.studentCount} تلميذ</p></article>)}</div></section>;
+  const levels = new Map<string, ClassGroup[]>();
+  project.classes.forEach((item) => { const key = item.gradeLevel || 'أقسام'; const list = levels.get(key) ?? []; list.push(item); levels.set(key, list); });
+  return <section><div className="mb-3 grid grid-cols-3 gap-2"><Stat value={project.classes.length} label="الأقسام" /><Stat value={project.classes.reduce((sum, item) => sum + Number(item.studentCount || 0), 0)} label="التلاميذ" /><Stat value={project.subjects.length} label="المواد" /></div>{[...levels.entries()].map(([level, items]) => <div key={level} className="mb-3 overflow-hidden rounded-2xl bg-white shadow-sm"><div className="border-b bg-slate-50 p-3"><b>{level}</b><span className="mr-2 text-[9px] text-slate-400">{items.length} أقسام</span></div>{items.map((item) => <div key={item.id} className="border-b p-3 last:border-b-0"><div className="flex items-center justify-between"><div><b>{item.code}</b><p className="text-[10px] text-slate-500">{item.name}</p></div><span className="rounded-lg bg-blue-50 px-2 py-1 text-[9px] font-black text-[#20518D]">{item.studentCount || 0} تلميذ</span></div></div>)}</div>)}</section>;
 }
 
-function Empty({ text }: { text: string }) { return <div className="rounded-2xl bg-white p-8 text-center font-bold text-slate-500">{text}</div>; }
+function Stat({ value, label }: { value: number; label: string }) { return <div className="rounded-2xl bg-white p-3 text-center shadow-sm"><b className="block text-lg">{value}</b><span className="text-[9px] font-bold text-slate-500">{label}</span></div>; }
+function Empty({ text }: { text: string }) { return <div className="rounded-2xl bg-white p-8 text-center text-sm font-bold text-slate-500 shadow-sm">{text}</div>; }
