@@ -248,7 +248,42 @@ function TeacherPlan({ project, teachers, teacherId, setTeacherId }: { project: 
 function Structure({ project }: { project: SavedScheduleProfile }) {
   const levels = new Map<string, ClassGroup[]>();
   project.classes.forEach((item) => { const key = item.gradeLevel || 'أقسام'; const list = levels.get(key) ?? []; list.push(item); levels.set(key, list); });
-  return <section><div className="mb-3 grid grid-cols-3 gap-2"><Stat value={project.classes.length} label="الأقسام" /><Stat value={project.classes.reduce((sum, item) => sum + Number(item.studentCount || 0), 0)} label="التلاميذ" /><Stat value={project.subjects.length} label="المواد" /></div>{[...levels.entries()].map(([level, items]) => <div key={level} className="mb-3 overflow-hidden rounded-2xl bg-white shadow-sm"><div className="border-b bg-slate-50 p-3"><b>{level}</b><span className="mr-2 text-[9px] text-slate-400">{items.length} أقسام</span></div>{items.map((item) => <div key={item.id} className="border-b p-3 last:border-b-0"><div className="flex items-center justify-between"><div><b>{item.code}</b><p className="text-[10px] text-slate-500">{item.name}</p></div><span className="rounded-lg bg-blue-50 px-2 py-1 text-[9px] font-black text-[#20518D]">{item.studentCount || 0} تلميذ</span></div></div>)}</div>)}</section>;
+
+  const structureByClass = project.classes.map((classGroup) => {
+    const rows = project.teachers.flatMap((teacher) => (teacher.weeklyHoursAssignments ?? []).map((assignment) => {
+      const assignedClassId = assignment.classGroupId || assignment.classId || '';
+      if (assignedClassId !== classGroup.id) return null;
+      const hours = Number(assignment.weeklyHours ?? assignment.hours ?? 0) || 0;
+      if (hours <= 0) return null;
+      const subject = project.subjects.find((item) => item.id === assignment.subjectId);
+      return { id: `${teacher.id}-${assignment.subjectId}-${assignedClassId}`, subjectName: subject?.name ?? 'مادة غير محددة', hours };
+    }).filter((item): item is { id: string; subjectName: string; hours: number } => Boolean(item)));
+
+    const totalHours = rows.reduce((sum, item) => sum + item.hours, 0);
+    return { classGroup, rows, totalHours };
+  });
+
+  return <section>
+    <div className="mb-3 grid grid-cols-3 gap-2"><Stat value={project.classes.length} label="الأقسام" /><Stat value={project.classes.reduce((sum, item) => sum + Number(item.studentCount || 0), 0)} label="التلاميذ" /><Stat value={project.subjects.length} label="المواد" /></div>
+    {[...levels.entries()].map(([level, items]) => <div key={level} className="mb-3 overflow-hidden rounded-2xl bg-white shadow-sm">
+      <div className="border-b bg-slate-50 p-3"><b>{level}</b><span className="mr-2 text-[9px] text-slate-400">{items.length} أقسام</span></div>
+      {items.map((item) => {
+        const data = structureByClass.find((entry) => entry.classGroup.id === item.id);
+        return <div key={item.id} className="border-b p-3 last:border-b-0">
+          <div className="flex items-center justify-between gap-2">
+            <div><b>{item.code}</b><p className="text-[10px] text-slate-500">{item.name}</p></div>
+            <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[9px] font-black text-emerald-700">{data?.totalHours ?? 0} ساعة</span>
+          </div>
+          {data && data.rows.length > 0 ? <div className="mt-3 overflow-hidden rounded-xl border border-slate-100">
+            {data.rows.map((row) => <div key={row.id} className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 last:border-b-0">
+              <span className="text-xs font-bold">{row.subjectName}</span>
+              <span className="shrink-0 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-black text-[#20518D]">{row.hours} س</span>
+            </div>)}
+          </div> : <p className="mt-3 rounded-xl bg-slate-50 p-3 text-center text-[10px] font-bold text-slate-400">لا توجد مواد مسندة لهذا القسم.</p>}
+        </div>;
+      })}
+    </div>)}
+  </section>;
 }
 
 function Stat({ value, label }: { value: number; label: string }) { return <div className="rounded-2xl bg-white p-3 text-center shadow-sm"><b className="block text-lg">{value}</b><span className="text-[9px] font-bold text-slate-500">{label}</span></div>; }
