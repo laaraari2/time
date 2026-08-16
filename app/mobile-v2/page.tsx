@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { CalendarDays, ChevronLeft, LogOut, RefreshCw, School, UserRound, BookOpen, Network, Clock3 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '../lib/supabase/browser';
+import { subscribeToProjectChanges } from '../lib/supabase/realtime';
 import type { SavedScheduleProfile, ClassGroup, Teacher, TimePeriod } from '../types';
 
 type View = 'schedule' | 'assignments' | 'teachers' | 'structure';
@@ -12,6 +13,7 @@ const fallbackDays = ['الاثنين', 'الثلاثاء', 'الأربعاء', 
 export default function MobileV2() {
   const [ready, setReady] = useState(false);
   const [logged, setLogged] = useState(false);
+  const [userId, setUserId] = useState('');
   const [profiles, setProfiles] = useState<SavedScheduleProfile[]>([]);
   const [project, setProject] = useState<SavedScheduleProfile | null>(null);
   const [view, setView] = useState<View>('schedule');
@@ -26,7 +28,9 @@ export default function MobileV2() {
       const response = await fetch('/api/timetable/profiles', { cache: 'no-store' });
       if (!response.ok) throw new Error(`Failed to load profiles: ${response.status}`);
       const data: unknown = await response.json();
-      setProfiles(Array.isArray(data) ? (data as SavedScheduleProfile[]) : []);
+      const nextProfiles = Array.isArray(data) ? (data as SavedScheduleProfile[]) : [];
+      setProfiles(nextProfiles);
+      setProject((current) => current ? nextProfiles.find((item) => item.id === current.id) ?? current : current);
     } catch {
       setProfiles([]);
     } finally {
@@ -40,11 +44,15 @@ export default function MobileV2() {
     void supabase.auth.getSession().then(({ data }) => {
       if (active) {
         setLogged(Boolean(data.session));
+        setUserId(data.session?.user.id ?? '');
         setReady(true);
       }
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setLogged(Boolean(session));
+      if (active) {
+        setLogged(Boolean(session));
+        setUserId(session?.user.id ?? '');
+      }
     });
     return () => {
       active = false;
@@ -55,6 +63,14 @@ export default function MobileV2() {
   useEffect(() => {
     if (logged) void loadProfiles();
   }, [logged]);
+
+  useEffect(() => {
+    if (!logged || !userId) return;
+    const supabase = createSupabaseBrowserClient();
+    return subscribeToProjectChanges(supabase, userId, () => {
+      void loadProfiles();
+    });
+  }, [logged, userId]);
 
   if (!ready) return <div dir="rtl" className="min-h-screen grid place-items-center bg-slate-100 font-bold">جاري التحقق...</div>;
 
