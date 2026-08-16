@@ -7,7 +7,7 @@ import { createSupabaseBrowserClient } from '../lib/supabase/browser';
 import { subscribeToProjectChanges } from '../lib/supabase/realtime';
 import type { SavedScheduleProfile, ClassGroup, Teacher, TimePeriod } from '../types';
 
-type View = 'schedule' | 'assignments' | 'teachers' | 'structure';
+type View = 'schedule' | 'assignments' | 'teachers' | 'structure' | 'todayTeachers';
 const fallbackDays = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
 export default function MobileV2() {
@@ -115,14 +115,16 @@ export default function MobileV2() {
         {view === 'assignments' && <Assignments project={project} />}
         {view === 'teachers' && <TeacherPlan project={project} teachers={teachers} teacherId={teacherId} setTeacherId={setTeacherId} />}
         {view === 'structure' && <Structure project={project} />}
+        {view === 'todayTeachers' && <TeachersToday project={project} days={days} />}
       </div>
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white/95 px-1 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(15,23,42,.08)]">
-        <div className="mx-auto grid max-w-xl grid-cols-4 gap-1">
+        <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
           <Nav active={view === 'schedule'} icon={<CalendarDays />} label="الجداول" onClick={() => setView('schedule')} />
           <Nav active={view === 'assignments'} icon={<BookOpen />} label="الإسنادات" onClick={() => setView('assignments')} />
           <Nav active={view === 'teachers'} icon={<UserRound />} label="الأساتذة" onClick={() => setView('teachers')} />
           <Nav active={view === 'structure'} icon={<Network />} label="بنية الأقسام" onClick={() => setView('structure')} />
+          <Nav active={view === 'todayTeachers'} icon={<Clock3 />} label="أساتذة اليوم" onClick={() => setView('todayTeachers')} />
         </div>
       </nav>
     </main>
@@ -185,6 +187,119 @@ function Structure({ project }: { project: SavedScheduleProfile }) {
     return { classGroup, rows, totalHours };
   });
   return <section><div className="mb-3 grid grid-cols-3 gap-2"><Stat value={project.classes.length} label="الأقسام" /><Stat value={structureByClass.reduce((sum, item) => sum + item.totalHours, 0)} label="مجموع الساعات" /><Stat value={structureByClass.length} label="الأقسام المحسوبة" /></div>{[...levels.entries()].map(([level, items]) => <div key={level} className="mb-3 overflow-hidden rounded-2xl bg-white shadow-sm"><div className="border-b bg-slate-50 p-3"><b>{level}</b><span className="mr-2 text-[9px] text-slate-400">{items.length} أقسام</span></div>{items.map((item) => { const data = structureByClass.find((entry) => entry.classGroup.id === item.id); return <div key={item.id} className="border-b p-3 last:border-b-0"><div className="flex items-center justify-between gap-2"><div><b>{item.code}</b><p className="text-[10px] text-slate-500">{item.name}</p></div><span className="rounded-lg bg-emerald-50 px-2 py-1 text-[9px] font-black text-emerald-700">{data?.totalHours ?? 0} ساعة</span></div>{data && data.rows.length > 0 ? <div className="mt-3 overflow-hidden rounded-xl border border-slate-100">{data.rows.map((row) => <div key={row.id} className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 last:border-b-0"><span className="text-xs font-bold">{row.subjectName}</span><span className="shrink-0 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-black text-[#20518D]">{row.hours} س</span></div>)}</div> : <p className="mt-3 rounded-xl bg-slate-50 p-3 text-center text-[10px] font-bold text-slate-400">لا توجد مواد مسندة لهذا القسم.</p>}</div>; })}</div>)}</section>;
+}
+
+function TeachersToday({ project, days }: { project: SavedScheduleProfile; days: string[] }) {
+  const [selectedDay, setSelectedDay] = useState(0);
+  const dayName = days[selectedDay] ?? fallbackDays[selectedDay] ?? '';
+
+  const rows = project.placements
+    .filter((placement) => placement.dayIndex === selectedDay)
+    .map((placement) => {
+      const lesson = project.lessons.find((item) => item.id === placement.lessonId);
+      if (!lesson) return null;
+
+      const teacher = project.teachers.find((item) => item.id === lesson.teacherId);
+      const subject = project.subjects.find((item) => item.id === lesson.subjectId);
+      const classGroup = project.classes.find((item) => item.id === lesson.classGroupId);
+      const period = project.config.periods[placement.periodIndex];
+
+      if (!teacher) return null;
+
+      return {
+        id: placement.id,
+        teacher: teacher.name,
+        subject: subject?.name ?? 'مادة',
+        className: classGroup?.code ?? classGroup?.name ?? 'قسم',
+        time: `${period?.startTime ?? ''} - ${period?.endTime ?? ''}`,
+        periodIndex: placement.periodIndex
+      };
+    })
+    .filter((item): item is {
+      id: string;
+      teacher: string;
+      subject: string;
+      className: string;
+      time: string;
+      periodIndex: number;
+    } => Boolean(item))
+    .sort((a, b) => a.periodIndex - b.periodIndex);
+
+  const grouped = new Map<string, typeof rows>();
+
+  rows.forEach((row) => {
+    const list = grouped.get(row.teacher) ?? [];
+    list.push(row);
+    grouped.set(row.teacher, list);
+  });
+
+  return (
+    <section>
+      <div className="mb-3 rounded-2xl bg-white p-4 shadow-sm">
+        <h2 className="text-xl font-black">أساتذة اليوم</h2>
+        <p className="mt-1 text-[11px] text-slate-500">
+          الأساتذة الذين عندهم حصص في اليوم المحدد.
+        </p>
+
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {days.map((name, index) => (
+            <button
+              type="button"
+              key={`${name}-${index}`}
+              onClick={() => setSelectedDay(index)}
+              className={`shrink-0 rounded-xl px-4 py-2 text-xs font-black ${
+                selectedDay === index
+                  ? 'bg-[#20518D] text-white'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-lg font-black">{dayName}</h3>
+        <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black text-[#20518D]">
+          {grouped.size} أستاذ
+        </span>
+      </div>
+
+      {grouped.size === 0 ? (
+        <Empty text={`لا توجد حصص للأساتذة يوم ${dayName}.`} />
+      ) : (
+        <div className="space-y-3">
+          {[...grouped.entries()].map(([teacher, teacherRows]) => (
+            <article key={teacher} className="overflow-hidden rounded-2xl bg-white shadow-sm">
+              <div className="flex items-center justify-between bg-[#123E70] p-3 text-white">
+                <b>{teacher}</b>
+                <span className="rounded-lg bg-white/15 px-2 py-1 text-[9px] font-black">
+                  {teacherRows.length} حصص
+                </span>
+              </div>
+
+              <div className="divide-y">
+                {teacherRows.map((row) => (
+                  <div key={row.id} className="flex items-center justify-between gap-3 p-3">
+                    <div className="min-w-0">
+                      <b className="block text-sm">{row.subject}</b>
+                      <span className="text-[10px] text-slate-500">
+                        {row.className}
+                      </span>
+                    </div>
+                    <span className="shrink-0 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-black text-[#20518D]">
+                      {row.time}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 function Stat({ value, label }: { value: number; label: string }) { return <div className="rounded-2xl bg-white p-3 text-center shadow-sm"><b className="block text-lg">{value}</b><span className="text-[9px] font-bold text-slate-500">{label}</span></div>; }
