@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireSupabaseUser } from '../../../lib/supabase/server';
 import { createProject, listProjects } from '../../../lib/projects';
+import { syncTeacherAccounts } from '../../../lib/teacherAccounts';
 
 type ProfilePayload = {
   name?: string;
@@ -22,38 +23,9 @@ export async function GET() {
     const projects = await listProjects();
     return NextResponse.json(projects);
   } catch (error: unknown) {
-    const e = error as {
-      message?: string;
-      code?: string;
-      details?: string;
-      hint?: string;
-      status?: number;
-    };
-
-    console.error('Failed to load projects:', {
-      userId: user.id,
-      message: e?.message,
-      code: e?.code,
-      details: e?.details,
-      hint: e?.hint,
-      status: e?.status,
-    });
-
-    // TEMPORARY DEBUG RESPONSE: remove after the root cause is fixed.
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to load projects',
-        debug: {
-          message: e?.message ?? String(error),
-          code: e?.code ?? null,
-          details: e?.details ?? null,
-          hint: e?.hint ?? null,
-          status: e?.status ?? null,
-        },
-      },
-      { status: 500 }
-    );
+    const e = error as { message?: string; code?: string; details?: string; hint?: string; status?: number };
+    console.error('Failed to load projects:', { userId: user.id, message: e?.message, code: e?.code, details: e?.details, hint: e?.hint, status: e?.status });
+    return NextResponse.json({ success: false, error: 'Failed to load projects' }, { status: 500 });
   }
 }
 
@@ -65,13 +37,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ProfilePayload;
     const name = String(body.name ?? '').trim();
-
-    if (!name) {
-      return NextResponse.json(
-        { success: false, error: 'Project name is required' },
-        { status: 400 }
-      );
-    }
+    if (!name) return NextResponse.json({ success: false, error: 'Project name is required' }, { status: 400 });
 
     const project = await createProject({
       name,
@@ -84,12 +50,10 @@ export async function POST(request: Request) {
       placements: body.placements ?? [],
     });
 
+    await syncTeacherAccounts(project.id, Array.isArray(project.teachers) ? project.teachers : []);
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error('Failed to create project:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create project' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to create project' }, { status: 500 });
   }
 }
