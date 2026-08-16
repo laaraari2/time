@@ -122,7 +122,7 @@ export default function MobileV2() {
         <div className="mx-auto grid max-w-xl grid-cols-5 gap-1">
           <Nav active={view === 'schedule'} icon={<CalendarDays />} label="الجداول" onClick={() => setView('schedule')} />
           <Nav active={view === 'assignments'} icon={<BookOpen />} label="الإسنادات" onClick={() => setView('assignments')} />
-          <Nav active={view === 'teachers'} icon={<UserRound />} label="الأساتذة" onClick={() => setView('teachers')} />
+
           <Nav active={view === 'structure'} icon={<Network />} label="بنية الأقسام" onClick={() => setView('structure')} />
           <Nav active={view === 'todayTeachers'} icon={<Clock3 />} label="أساتذة اليوم" onClick={() => setView('todayTeachers')} />
         </div>
