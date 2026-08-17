@@ -6,6 +6,7 @@ import { ArrowRight, KeyRound, Mail, Trash2, UserPlus, Users } from 'lucide-reac
 interface Project {
   id: string;
   name: string;
+  teachers?: Array<{ id: string; code?: string; name?: string }>;
 }
 
 interface TeacherAccount {
@@ -33,14 +34,30 @@ export default function UserManagementPage() {
     [teachers, teacherId]
   );
 
+  const getProjectTeachers = (selectedProjectId: string): TeacherAccount[] => {
+    const project = projects.find((item) => item.id === selectedProjectId);
+    return (project?.teachers ?? []).map((teacher) => ({
+      id: teacher.id,
+      code: teacher.code ?? '',
+      name: teacher.name ?? '',
+      accountId: null,
+      userId: null,
+      email: '',
+    }));
+  };
+
   useEffect(() => {
     const loadProjects = async () => {
       try {
         const response = await fetch('/api/timetable/profiles', { cache: 'no-store' });
         if (!response.ok) throw new Error('تعذر تحميل المشاريع.');
         const data = await response.json();
-        const nextProjects = Array.isArray(data)
-          ? data.map((project: { id: string; name: string }) => ({ id: project.id, name: project.name }))
+        const nextProjects: Project[] = Array.isArray(data)
+          ? data.map((project: Project) => ({
+              id: project.id,
+              name: project.name,
+              teachers: Array.isArray(project.teachers) ? project.teachers : [],
+            }))
           : [];
         setProjects(nextProjects);
         if (nextProjects.length) setProjectId(nextProjects[0].id);
@@ -56,10 +73,17 @@ export default function UserManagementPage() {
   }, []);
 
   const loadAccounts = async (selectedProjectId: string) => {
+    setTeacherId('');
+
     if (!selectedProjectId) {
       setTeachers([]);
       return;
     }
+
+    // مهم: الأساتذة الحقيقيون مصدرهم المشروع نفسه.
+    // هكذا يظهرون مباشرة حتى لو تعذر تحميل معلومات الحسابات.
+    const projectTeachers = getProjectTeachers(selectedProjectId);
+    setTeachers(projectTeachers);
 
     try {
       setError('');
@@ -68,18 +92,35 @@ export default function UserManagementPage() {
         { cache: 'no-store' }
       );
       const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || 'تعذر تحميل الحسابات.');
-      setTeachers(Array.isArray(data.teachers) ? data.teachers : []);
+      if (!response.ok) throw new Error(data?.error || 'تعذر تحميل حالة الحسابات.');
+
+      if (Array.isArray(data.teachers)) {
+        const accountTeachers = data.teachers as TeacherAccount[];
+        const accountsByTeacherId = new Map(
+          accountTeachers.map((teacher) => [teacher.id, teacher])
+        );
+
+        setTeachers(
+          projectTeachers.map((teacher) => ({
+            ...teacher,
+            ...(accountsByTeacherId.get(teacher.id) ?? {}),
+          }))
+        );
+      }
     } catch (loadError: unknown) {
       console.error(loadError);
-      setError(loadError instanceof Error ? loadError.message : 'تعذر تحميل الحسابات.');
-      setTeachers([]);
+      // لا نفرغ الأساتذة هنا: القائمة الأساسية موجودة داخل المشروع.
+      setError(
+        loadError instanceof Error
+          ? `${loadError.message} يمكنك مع ذلك اختيار الأستاذ من القائمة.`
+          : 'تعذر تحميل حالة الحسابات. يمكنك مع ذلك اختيار الأستاذ.'
+      );
     }
   };
 
   useEffect(() => {
     void loadAccounts(projectId);
-  }, [projectId]);
+  }, [projectId, projects]);
 
   const handleCreate = async (event: FormEvent) => {
     event.preventDefault();
@@ -184,11 +225,11 @@ export default function UserManagementPage() {
 
               <div>
                 <label className="mb-1 block text-xs font-black text-slate-700">الأستاذ</label>
-                <select value={teacherId} onChange={(event) => setTeacherId(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-500">
+                <select value={teacherId} onChange={(event) => setTeacherId(event.target.value)} disabled={!projectId || !teachers.length} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60">
                   <option value="">اختر الأستاذ...</option>
                   {availableTeachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name} ({teacher.code})</option>)}
                 </select>
-                {!availableTeachers.length && <p className="mt-1 text-[10px] font-bold text-amber-700">كل الأساتذة في هذا المشروع لديهم حسابات بالفعل.</p>}
+                {!teachers.length && <p className="mt-1 text-[10px] font-bold text-amber-700">لا يوجد أستاذ مسجل في هذا المشروع.</p>}
               </div>
 
               <div>
