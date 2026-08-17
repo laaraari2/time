@@ -3,12 +3,10 @@ import { requireSupabaseUser } from '../../../lib/supabase/server';
 import { createSupabaseAdminClient } from '../../../lib/supabase/admin';
 
 async function requireManager() {
+  // Authentication is handled here; authorization is enforced per project
+  // below using the project's owner_id. This avoids depending on the optional
+  // get_timetable_user_role RPC for the manager UI.
   const { supabase, user } = await requireSupabaseUser();
-  if (!user) return { supabase, user: null };
-
-  const { data: role } = await supabase.rpc('get_timetable_user_role');
-  if (role !== 'manager') return { supabase, user: null };
-
   return { supabase, user };
 }
 
@@ -56,14 +54,14 @@ export async function GET(request: Request) {
       project: { id: project.id, name: project.name },
       teachers: teachers.map((teacher: any) => {
         const account = (accounts ?? []).find((item) => item.teacher_id === teacher.id);
-        const user = account ? users.get(account.user_id) : undefined;
+        const accountUser = account ? users.get(account.user_id) : undefined;
         return {
           id: teacher.id,
           code: teacher.code ?? '',
           name: teacher.name ?? '',
           accountId: account?.id ?? null,
           userId: account?.user_id ?? null,
-          email: user?.email ?? '',
+          email: accountUser?.email ?? '',
         };
       }),
     });
