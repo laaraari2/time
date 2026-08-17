@@ -1,4 +1,5 @@
 import { requireSupabaseUser } from './supabase/server';
+import { createSupabaseAdminClient } from './supabase/admin';
 
 export type ProjectRecord = {
   id: string;
@@ -63,22 +64,73 @@ function mapRpcProject(value: unknown): ProjectRecord | null {
   };
 }
 
+function restrictProjectForTeacher(row: ProjectRow, teacherId: string): ProjectRecord {
+  const teachers = Array.isArray(row.teachers) ? row.teachers as Array<Record<string, unknown>> : [];
+  const subjects = Array.isArray(row.subjects) ? row.subjects as Array<Record<string, unknown>> : [];
+  const classes = Array.isArray(row.classes) ? row.classes as Array<Record<string, unknown>> : [];
+  const lessons = Array.isArray(row.lessons) ? row.lessons as Array<Record<string, unknown>> : [];
+  const placements = Array.isArray(row.placements) ? row.placements as Array<Record<string, unknown>> : [];
+
+  const teacherLessons = lessons.filter((lesson) => String(lesson.teacherId ?? lesson.teacher_id ?? '') === teacherId);
+  const teacherLessonIds = new Set(teacherLessons.map((lesson) => String(lesson.id ?? '')));
+  const teacherSubjectIds = new Set(teacherLessons.map((lesson) => String(lesson.subjectId ?? lesson.subject_id ?? '')).filter(Boolean));
+  const teacherClassIds = new Set(teacherLessons.map((lesson) => String(lesson.classGroupId ?? lesson.classId ?? lesson.class_group_id ?? '')).filter(Boolean));
+
+  return mapProject({
+    ...row,
+    teachers: teachers.filter((teacher) => String(teacher.id ?? '') === teacherId),
+    subjects: subjects.filter((subject) => teacherSubjectIds.has(String(subject.id ?? ''))),
+    classes: classes.filter((classItem) => teacherClassIds.has(String(classItem.id ?? ''))),
+    rooms: [],
+    lessons: teacherLessons,
+    placements: placements.filter((placement) => teacherLessonIds.has(String(placement.lessonId ?? placement.lesson_id ?? ''))),
+  });
+}
+
 export async function listProjects(): Promise<ProjectRecord[]> {
   const { supabase, user } = await requireSupabaseUser();
   if (!user) return [];
 
-  // This RPC is the authorization boundary for mobile access. Owners receive
-  // their full project; teachers receive only their own teacher/lessons/classes.
+  // This RPC is the preferred authorization boundary for mobile access. Owners receive
+  // their full projects; teachers receive only their own teacher/lessons/classes.
   const { data: accessibleProjects, error: rpcError } = await supabase.rpc('get_accessible_projects');
   if (!rpcError && Array.isArray(accessibleProjects)) {
     return accessibleProjects.map(mapRpcProject).filter((item): item is ProjectRecord => Boolean(item));
   }
 
-  // Keep the manager experience working if the new SQL function has not yet
-  // been applied to Supabase. Teachers will become available after migration.
-  const { data, error } = await supabase
+  // Backward-compatible fallback for databases where teacher_access.sql has not
+  // created the RPC yet. Use the server-side admin client only after authenticating
+  // the current user, then explicitly restrict the returned data to their project.
+  const admin = createSupabaseAdminClient();
+  const { data: accounts, error: accountsError } = await admin
+    .from('teacher_accounts')
+    .select('project_id,teacher_id')
+    .eq('user_id', user.id);
+
+  if (!accountsError && Array.isArray(accounts) && accounts.length > 0) {
+    const accountByProject = new Map<string, string>();
+    for (const account of accounts) {
+      accountByProject.set(String(account.project_id), String(account.teacher_id));
+    }
+
+    const { data: teacherProjects, error: teacherProjectsError } = await admin
+      .from('projects')
+      .select('id,name,created_at,updated_at,config,subjects,teachers,classes,rooms,lessons,placements')
+      .order('updated_at', { ascending: false });
+
+    if (teacherProjectsError) throw teacherProjectsError;
+
+    return ((teacherProjects ?? []) as ProjectRow[])
+      .filter((row) => accountByProject.has(String(row.id)))
+      .map((row) => restrictProjectForTeacher(row, accountByProject.get(String(row.id))!));
+  }
+
+  // Manager fallback: keep the existing experience working when the RPC migration
+  // is unavailable, but never expose projects owned by another manager.
+  const { data, error } = await admin
     .from('projects')
     .select('id,name,created_at,updated_at,config,subjects,teachers,classes,rooms,lessons,placements')
+    .eq('owner_id', user.id)
     .order('updated_at', { ascending: false });
 
   if (error) throw error;
@@ -95,8 +147,12 @@ export async function getTimetableUserRole(): Promise<'manager' | 'teacher' | 'n
   }
 
   // Fallback for existing databases before the migration is applied.
-  const { data: ownProjects } = await supabase.from('projects').select('id').limit(1);
-  return ownProjects && ownProjects.length > 0 ? 'manager' : 'none';
+  const admin = createSupabaseAdminClient();
+  const { data: ownProjects } = await admin.from('projects').select('id').eq('owner_id', user.id).limit(1);
+  if (ownProjects && ownProjects.length > 0) return 'manager';
+
+  const { data: teacherAccount } = await admin.from('teacher_accounts').select('id').eq('user_id', user.id).limit(1);
+  return teacherAccount && teacherAccount.length > 0 ? 'teacher' : 'none';
 }
 
 export async function getProject(id: string) {
