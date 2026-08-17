@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, KeyRound, Mail, Trash2, UserPlus, Users } from 'lucide-react';
-import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
 
 interface Project {
   id: string;
@@ -41,7 +40,7 @@ export default function UserManagementPage() {
         if (!response.ok) throw new Error('تعذر تحميل المشاريع.');
         const data = await response.json();
         const nextProjects = Array.isArray(data)
-          ? data.map((project: any) => ({ id: project.id, name: project.name }))
+          ? data.map((project: { id: string; name: string }) => ({ id: project.id, name: project.name }))
           : [];
         setProjects(nextProjects);
         if (nextProjects.length) setProjectId(nextProjects[0].id);
@@ -71,9 +70,9 @@ export default function UserManagementPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || 'تعذر تحميل الحسابات.');
       setTeachers(Array.isArray(data.teachers) ? data.teachers : []);
-    } catch (loadError: any) {
+    } catch (loadError: unknown) {
       console.error(loadError);
-      setError(loadError?.message || 'تعذر تحميل الحسابات.');
+      setError(loadError instanceof Error ? loadError.message : 'تعذر تحميل الحسابات.');
       setTeachers([]);
     }
   };
@@ -108,9 +107,9 @@ export default function UserManagementPage() {
       setPassword('');
       setTeacherId('');
       await loadAccounts(projectId);
-    } catch (createError: any) {
+    } catch (createError: unknown) {
       console.error(createError);
-      setError(createError?.message || 'تعذر إنشاء الحساب.');
+      setError(createError instanceof Error ? createError.message : 'تعذر إنشاء الحساب.');
     } finally {
       setSaving(false);
     }
@@ -130,9 +129,9 @@ export default function UserManagementPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || 'تعذر حذف الحساب.');
       await loadAccounts(projectId);
-    } catch (deleteError: any) {
+    } catch (deleteError: unknown) {
       console.error(deleteError);
-      setError(deleteError?.message || 'تعذر حذف الحساب.');
+      setError(deleteError instanceof Error ? deleteError.message : 'تعذر حذف الحساب.');
     }
   };
 
