@@ -1,6 +1,11 @@
 import { createSupabaseAdminClient } from './supabase/admin';
 
-export async function syncTeacherAccounts(projectId: string, teachers: Array<{ id?: string | null }>) {
+type TeacherAccountInput = {
+  id?: string | null;
+  code?: string | null;
+};
+
+export async function syncTeacherAccounts(projectId: string, teachers: TeacherAccountInput[]) {
   const admin = createSupabaseAdminClient();
   const { data: existingUsers, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (listError) throw listError;
@@ -9,10 +14,13 @@ export async function syncTeacherAccounts(projectId: string, teachers: Array<{ i
 
   for (const teacher of teachers) {
     const teacherId = String(teacher.id ?? '').trim();
-    if (!teacherId) continue;
+    const loginId = String(teacher.code ?? teacher.id ?? '').trim();
+    if (!teacherId || !loginId) continue;
 
-    const email = `${teacherId}@prof.com`.toLowerCase();
-    const password = teacherId;
+    // The employee-facing teacher code (for example ENS-001) is the
+    // teacher's login ID. Keep the internal teacher.id for timetable links.
+    const email = `${loginId}@prof.com`.toLowerCase();
+    const password = loginId;
     let user = usersByEmail.get(email);
 
     if (!user) {
