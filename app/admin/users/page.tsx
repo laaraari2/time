@@ -82,7 +82,7 @@ export default function UserManagementPage() {
   };
 
   const handleDelete = async (teacher: TeacherAccount) => {
-    if (!teacher.accountId || !window.confirm(`هل تريد حذف حساب ${teacher.name؟`)) return;
+    if (!teacher.accountId || !window.confirm(`هل تريد حذف حساب ${teacher.name}؟`)) return;
     try {
       setError('');
       const response = await fetch('/api/timetable/teacher-accounts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId, teacherId: teacher.id }) });
@@ -100,17 +100,19 @@ export default function UserManagementPage() {
           <button onClick={() => window.location.assign('/')} className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-black hover:bg-white/20"><ArrowRight className="h-4 w-4" />الرجوع</button>
         </div>
         {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">{error}</div>}
+
         <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-4 flex items-center gap-2"><UserPlus className="h-5 w-5 text-blue-600" /><h2 className="font-black text-slate-900">إنشاء حساب أستاذ</h2></div>
             <form onSubmit={handleCreate} className="space-y-3">
               <div><label className="mb-1 block text-xs font-black text-slate-700">استعمال الزمن</label><select value={projectId} onChange={(e) => setProjectId(e.target.value)} disabled={loading} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"><option value="">اختر المشروع...</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></div>
-              <div><label className="mb-1 block text-xs font-black text-slate-700">الأستاذ</label><select value={teacherId} onChange={(e) => setTeacherId(e.target.value)} disabled={!projectId || !availableTeachers.length} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"><option value="">اختر الأستاذ...</option>{availableTeachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name} ({teacher.code})</option>)}</select></div>
+              <div><label className="mb-1 block text-xs font-black text-slate-700">الأستاذ</label><select value={teacherId} onChange={(e) => setTeacherId(e.target.value)} disabled={!projectId || !availableTeachers.length} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"><option value="">اختر الأستاذ...</option>{availableTeachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name} ({teacher.code})</option>)}</select>{!projectTeachers.length && <p className="mt-1 text-[10px] font-bold text-amber-700">لا يوجد أستاذ مسجل في هذا المشروع.</p>}{projectTeachers.length > 0 && !availableTeachers.length && <p className="mt-1 text-[10px] font-bold text-emerald-700">جميع أساتذة المشروع لديهم حسابات.</p>}</div>
               <div><label className="mb-1 block text-xs font-black text-slate-700">البريد الإلكتروني</label><div className="relative"><Mail className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="prof@example.com" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm" required /></div></div>
               <div><label className="mb-1 block text-xs font-black text-slate-700">كلمة المرور</label><div className="relative"><KeyRound className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="6 أحرف على الأقل" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm" required /></div></div>
               <button disabled={saving || !teacherId || !projectId} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#20518D] px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"><UserPlus className="h-4 w-4" />{saving ? 'جاري الحفظ...' : 'حفظ وإنشاء المستخدم'}</button>
             </form>
           </section>
+
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-black text-slate-900">حسابات الأساتذة</h2><p className="mt-1 text-xs text-slate-500">الجدول يبقى فارغاً حتى يتم حفظ حساب أستاذ.</p></div><span className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-800">{accounts.length} حساب</span></div>
             <div className="overflow-x-auto rounded-xl border border-slate-200">
