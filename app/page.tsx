@@ -8,6 +8,28 @@ import { SavedScheduleProfile } from './types';
 import { Dashboard } from './components/Dashboard';
 import { TimetableApp } from './TimetableApp';
 
+async function getTimetableRole(): Promise<'manager' | 'teacher' | 'none'> {
+  try {
+    const response = await fetch('/api/timetable/me', {
+      cache: 'no-store',
+    });
+    if (!response.ok) return 'none';
+
+    const data = await response.json();
+    if (
+      data?.role === 'manager' ||
+      data?.role === 'teacher' ||
+      data?.role === 'none'
+    ) {
+      return data.role;
+    }
+  } catch (error) {
+    console.error('Failed to resolve timetable role:', error);
+  }
+
+  return 'none';
+}
+
 function LoginScreen({
   onLogin,
 }: {
@@ -224,16 +246,34 @@ export default function App() {
     let active = true;
     const supabase = createSupabaseBrowserClient();
 
-    void supabase.auth.getSession().then(({ data }) => {
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
       if (!active) return;
-      setIsLoggedIn(Boolean(data.session));
-      setAuthReady(true);
-    });
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      setIsLoggedIn(Boolean(session));
+      if (data.session) {
+        const role = await getTimetableRole();
+
+        if (!active) return;
+
+        if (role === 'teacher') {
+          window.location.replace('/mobile-v2/teacher');
+          return;
+        }
+
+        setIsLoggedIn(true);
+      }
+
       setAuthReady(true);
+    })();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((event) => {
+      if (!active) return;
+
+      if (event === 'SIGNED_OUT') {
+        setIsLoggedIn(false);
+        setSelectedProfile(null);
+        setShowDashboard(true);
+      }
     });
 
     return () => {
@@ -242,7 +282,14 @@ export default function App() {
     };
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    const role = await getTimetableRole();
+
+    if (role === 'teacher') {
+      window.location.replace('/mobile-v2/teacher');
+      return;
+    }
+
     setIsLoggedIn(true);
     setShowDashboard(true);
     setSelectedProfile(null);
