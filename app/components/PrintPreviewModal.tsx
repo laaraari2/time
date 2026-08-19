@@ -136,7 +136,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   checked={printType === 'single_class'}
                   onChange={() => setPrintType('single_class')}
                 />
-                <span>جدول فصل محدد</span>
+                <span>جدول قسم محدد</span>
               </label>
               <label className="flex items-center gap-1 font-bold cursor-pointer text-slate-800">
                 <input
@@ -395,10 +395,10 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
             {/* Matrix View */}
             {printType === 'matrix' && (
-              <table className="w-full border-collapse border border-slate-800 text-center text-[9.5px]">
+              <table className="w-full border-collapse border border-slate-800 text-center text-[8px]" style={{ tableLayout: 'fixed' }}>
                 <thead>
                   <tr className="bg-slate-200 border-b border-slate-800 font-extrabold">
-                    <th className="p-1 border border-slate-800 w-16">الفصل</th>
+                    <th className="p-1 border border-slate-800 w-16">القسم</th>
                     {config.days.map((dayName, dIdx) => {
                       const activePeriodIndices = config.periods
                         .map((_, i) => i)
