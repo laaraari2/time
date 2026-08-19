@@ -47,7 +47,7 @@ export default function TeacherMobilePage() {
       const subject = project.subjects.find((item) => item.id === lesson.subjectId);
       const classGroup = project.classes.find((item) => item.id === lesson.classGroupId);
       const period = project.config.periods[placement.periodIndex];
-      return { id: placement.id, dayIndex: placement.dayIndex, periodIndex: placement.periodIndex, day: days[placement.dayIndex] ?? fallbackDays[placement.dayIndex] ?? '', start: period?.startTime ?? '', end: period?.endTime ?? '', subject: subject?.name ?? 'مادة', className: classGroup?.code ?? classGroup?.name ?? 'قسم' };
+      return { id: placement.id, dayIndex: placement.dayIndex, periodIndex: placement.periodIndex, day: days[placement.dayIndex] ?? fallbackDays[placement.dayIndex] ?? '', start: period?.startTime ?? '', end: period?.endTime ?? '', subject: subject?.name ?? 'مادة', className: classGroup?.code ?? 'قسم' };
     }).filter((item): item is Row => Boolean(item)).sort((a, b) => a.dayIndex - b.dayIndex || a.periodIndex - b.periodIndex);
   }, [project, days]);
 
