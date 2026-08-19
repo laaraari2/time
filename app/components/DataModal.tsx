@@ -1271,22 +1271,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-slate-600 mb-1 block">
-                    لون المادة:
-                  </label>
-
-                  <input
-                    type="color"
-                    value={subColor}
-                    onChange={(e) =>
-                      setSubColor(
-                        e.target.value
-                      )
-                    }
-                    className="w-12 h-8 rounded border border-slate-300 cursor-pointer"
-                  />
-                </div>
+                
 
                 <button
                   type="submit"
@@ -1505,8 +1490,20 @@ export const DataModal: React.FC<DataModalProps> = ({
                         <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
 
                           <div>
-                            <div className="font-extrabold text-xs text-teal-950">
+                            <div className="font-extrabold text-xs text-teal-950 flex items-center gap-2">
                               {t.code}
+                              <input
+                                type="color"
+                                value={t.color || '#3B82F6'}
+                                onChange={(e) => {
+                                  const newTeachers = teachers.map(teacher => 
+                                    teacher.id === t.id ? { ...teacher, color: e.target.value } : teacher
+                                  );
+                                  onUpdateTeachers(newTeachers);
+                                }}
+                                className="w-5 h-5 rounded cursor-pointer border-none p-0"
+                                title="تغيير لون الأستاذ"
+                              />
                             </div>
 
                             <div className="text-[11px] font-bold text-slate-700">
