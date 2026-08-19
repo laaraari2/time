@@ -312,7 +312,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                             {det ? (
                               <div
                                 className="p-1.5 rounded border border-slate-400 h-full flex flex-col justify-center items-center shadow-2xs"
-                                style={{ backgroundColor: det.teacher?.color || det.subject?.color || '#F3F4F6', color: det.teacher?.textColor || det.subject?.textColor || '#000' }}
+                                style={{ backgroundColor: det.teacher?.color || '#F3F4F6', color: det.teacher?.textColor || '#000' }}
                               >
                                 <div className="font-extrabold text-sm leading-tight">{det.subject?.name}</div>
                                 <div className="text-[10px] text-slate-800 mt-1 flex items-center justify-center gap-1 font-bold">
@@ -375,7 +375,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                             {det ? (
                               <div
                                 className="p-1.5 rounded border border-slate-400 h-full flex flex-col justify-center items-center shadow-2xs"
-                                style={{ backgroundColor: det.teacher?.color || det.subject?.color || '#F3F4F6', color: det.teacher?.textColor || det.subject?.textColor || '#000' }}
+                                style={{ backgroundColor: det.teacher?.color || '#F3F4F6', color: det.teacher?.textColor || '#000' }}
                               >
                                 <div className="font-extrabold text-sm leading-tight">{det.classGroup?.name || det.classGroup?.code}</div>
                                 <div className="text-[10px] text-slate-800 mt-1 font-bold">

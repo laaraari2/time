@@ -53,8 +53,8 @@ export const LessonCardModal: React.FC<LessonCardModalProps> = ({
         <div
           className="px-5 py-3.5 flex items-center justify-between text-white"
           style={{
-            backgroundColor: teacher?.color || subject?.color || '#20518D',
-            color: teacher?.textColor || subject?.textColor || '#FFFFFF',
+            backgroundColor: teacher?.color || '#20518D',
+            color: teacher?.textColor || '#FFFFFF',
           }}
         >
           <div className="flex items-center gap-2">
