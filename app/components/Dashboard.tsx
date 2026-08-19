@@ -203,8 +203,12 @@ export function Dashboard({ onOpenProfile, onCreateSchedule }: DashboardProps) {
 
                     <div className="p-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#20518D]">
-                          <School className="h-5 w-5" />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-blue-50 text-[#20518D]">
+                          {profile.config?.schoolLogo ? (
+                            <img src={profile.config.schoolLogo} alt="شعار المؤسسة" className="h-full w-full object-contain p-0.5" />
+                          ) : (
+                            <School className="h-5 w-5" />
+                          )}
                         </div>
 
                         <div className="min-w-0">
