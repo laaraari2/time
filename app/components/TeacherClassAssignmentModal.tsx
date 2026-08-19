@@ -423,9 +423,9 @@ export const TeacherClassAssignmentModal: React.FC<
                                 className="screen-subject-badge inline-flex rounded px-1.5 py-0.5 text-[10.5px] font-black"
                                 style={{
                                   backgroundColor:
-                                    primarySubject.color || '#F3F4F6',
+                                    teacher?.color || primarySubject.color || '#F3F4F6',
                                   color:
-                                    primarySubject.textColor || '#111827',
+                                    teacher?.textColor || primarySubject.textColor || '#111827',
                                 }}
                               >
                                 <span className="block truncate text-[9px] leading-tight">

@@ -52,8 +52,8 @@ export async function POST(request: Request) {
 
     await syncTeacherAccounts(project.id, Array.isArray(project.teachers) ? project.teachers : []);
     return NextResponse.json(project, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to create project:', error);
-    return NextResponse.json({ success: false, error: 'Failed to create project' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || 'Failed to create project' }, { status: 500 });
   }
 }

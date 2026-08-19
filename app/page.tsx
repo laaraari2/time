@@ -50,8 +50,14 @@ function LoginScreen({
     try {
       setError('');
       const supabase = createSupabaseBrowserClient();
+
+      let loginEmail = email.trim();
+      if (!loginEmail.includes('@')) {
+        loginEmail = `${encodeURIComponent(loginEmail).replace(/%/g, '_').toLowerCase()}@prof.com`;
+      }
+
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: loginEmail,
         password,
       });
 
@@ -110,13 +116,12 @@ function LoginScreen({
                     {Array.from({ length: 15 }).map((_, index) => (
                       <div
                         key={index}
-                        className={`h-3.5 rounded ${
-                          index % 5 === 1
+                        className={`h-3.5 rounded ${index % 5 === 1
                             ? 'bg-amber-300/80'
                             : index % 4 === 0
                               ? 'bg-white/40'
                               : 'bg-white/15'
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>

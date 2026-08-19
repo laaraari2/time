@@ -497,8 +497,8 @@ export const TimetableMatrixView: React.FC<TimetableMatrixViewProps> = ({
                               className={`absolute inset-0 w-full h-full rounded-none border border-black/20 px-1 py-0 flex items-center justify-center shadow-2xs group transition-transform active:scale-[0.99] ${hasConflict ? 'ring-2 ring-red-600 ring-inset animate-pulse' : ''
                                 }`}
                               style={{
-                                backgroundColor: details.subject?.color || '#E5E7EB',
-                                color: details.subject?.textColor || '#000000',
+                                backgroundColor: details.teacher?.color || details.subject?.color || '#E5E7EB',
+                                color: details.teacher?.textColor || details.subject?.textColor || '#000000',
                               }}
                             >
                               {/* Subject Code */}

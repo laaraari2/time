@@ -427,9 +427,9 @@ Restant : ${group.remainingCount} séances`;
                           left: visualOffset,
                           zIndex: index + 1,
                           backgroundColor:
-                            subject?.color || '#E5E7EB',
+                            teacher?.color || subject?.color || '#E5E7EB',
                           color:
-                            subject?.textColor || '#000000',
+                            teacher?.textColor || subject?.textColor || '#000000',
                         }}
                       >
                         <span className="text-[11px] font-black leading-none">

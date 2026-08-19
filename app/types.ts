@@ -27,6 +27,7 @@ export interface Teacher {
   classGroupIds?: string[];
 
   color?: string;
+  textColor?: string;
 
   // Days and periods when the teacher cannot teach
   unavailableSlots: {

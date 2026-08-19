@@ -193,8 +193,8 @@ export const TeacherWorkloadModal: React.FC<TeacherWorkloadModalProps> = ({
                           <span
                             className="inline-block px-2 py-0.5 rounded text-[10.5px] font-bold border"
                             style={{
-                              backgroundColor: primarySubject.color || '#E2E8F0',
-                              color: primarySubject.textColor || '#000',
+                              backgroundColor: teacher?.color || primarySubject.color || '#E2E8F0',
+                              color: teacher?.textColor || primarySubject.textColor || '#000',
                             }}
                           >
                             {primarySubject.name} ({primarySubject.code})

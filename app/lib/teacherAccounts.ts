@@ -19,7 +19,8 @@ export async function syncTeacherAccounts(projectId: string, teachers: TeacherAc
 
     // The employee-facing teacher code (for example ENS-001) is the
     // teacher's login ID. Keep the internal teacher.id for timetable links.
-    const email = `${loginId}@prof.com`.toLowerCase();
+    const safeLoginId = encodeURIComponent(loginId).replace(/%/g, '_').toLowerCase();
+    const email = `${safeLoginId}@prof.com`;
     const password = loginId;
     let user = usersByEmail.get(email);
 

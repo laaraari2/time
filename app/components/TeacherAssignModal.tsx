@@ -32,6 +32,8 @@ export const TeacherAssignModal: React.FC<TeacherAssignModalProps> = ({
   // Basic Info State
   const [teacherCode, setTeacherCode] = useState(teacher?.code || '');
   const [teacherName, setTeacherName] = useState(teacher?.name || '');
+  const [teacherColor, setTeacherColor] = useState(teacher?.color || '#3B82F6');
+  const [teacherTextColor, setTeacherTextColor] = useState(teacher?.textColor || '#FFFFFF');
   const [selectedSubjectId, setSelectedSubjectId] = useState(
     teacher?.subjectIds?.[0] || (subjects[0]?.id ?? '')
   );
@@ -107,6 +109,8 @@ export const TeacherAssignModal: React.FC<TeacherAssignModalProps> = ({
       id: teacherId,
       code: teacherCode.trim(),
       name: teacherName.trim(),
+      color: teacherColor,
+      textColor: teacherTextColor,
       subjectIds: selectedSubjectId ? [selectedSubjectId] : [],
       unavailableSlots: teacher?.unavailableSlots || [],
     };
@@ -228,6 +232,26 @@ export const TeacherAssignModal: React.FC<TeacherAssignModalProps> = ({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">لون الأستاذ:</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={teacherColor}
+                    onChange={(e) => setTeacherColor(e.target.value)}
+                    className="h-8 w-12 cursor-pointer rounded border border-slate-300 p-0.5"
+                  />
+                  <input
+                    type="color"
+                    value={teacherTextColor}
+                    onChange={(e) => setTeacherTextColor(e.target.value)}
+                    className="h-8 w-12 cursor-pointer rounded border border-slate-300 p-0.5"
+                    title="لون النص"
+                  />
+                  <span className="text-[10px] text-slate-500">الخلفية / النص</span>
+                </div>
               </div>
             </div>
           </div>
