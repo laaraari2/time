@@ -150,7 +150,7 @@ function Schedule({ project, classes, classId, setClassId, days, day, setDay }: 
   const lessons = project.lessons;
   const placements = project.placements;
   const rows = placements.filter((placement) => placement.dayIndex === day).map((placement) => ({ placement, lesson: lessons.find((lesson) => lesson.id === placement.lessonId) })).filter(({ lesson }) => lesson?.classGroupId === classId).sort((a, b) => a.placement.periodIndex - b.placement.periodIndex);
-  return <section><div className="rounded-2xl bg-white p-3 shadow-sm"><label className="mb-2 block text-xs font-black" htmlFor="mobile-class">القسم</label><select id="mobile-class" value={classId} onChange={(event) => setClassId(event.target.value)} className="w-full rounded-xl border border-slate-200 p-3 text-sm font-bold">{classes.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select></div><div className="my-3 flex gap-2 overflow-x-auto pb-1">{days.map((name, index) => <button type="button" key={`${name}-${index}`} onClick={() => setDay(index)} className={`shrink-0 rounded-xl px-4 py-2 text-xs font-black ${index === day ? 'bg-[#20518D] text-white' : 'bg-white text-slate-600'}`}>{name}</button>)}</div><div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-black">جدول الحصص</h2><span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black text-[#20518D]">{rows.length} حصص</span></div>{rows.length === 0 ? <Empty text="لا توجد حصص مبرمجة لهذا اليوم." /> : <div className="space-y-2">{rows.map(({ placement, lesson }) => <ScheduleCard key={placement.id} placementPeriod={placement.periodIndex} lesson={lesson} periods={project.config.periods} subjects={project.subjects} teachers={project.teachers} />)}</div>}</section>;
+  return <section><div className="rounded-2xl bg-white p-3 shadow-sm"><label className="mb-2 block text-xs font-black" htmlFor="mobile-class">القسم</label><select id="mobile-class" value={classId} onChange={(event) => setClassId(event.target.value)} className="w-full rounded-xl border border-slate-200 p-3 text-sm font-bold">{classes.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</select></div><div className="my-3 flex gap-2 overflow-x-auto pb-1">{days.map((name, index) => <button type="button" key={`${name}-${index}`} onClick={() => setDay(index)} className={`shrink-0 rounded-xl px-4 py-2 text-xs font-black ${index === day ? 'bg-[#20518D] text-white' : 'bg-white text-slate-600'}`}>{name}</button>)}</div><div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-black">جدول الحصص</h2><span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black text-[#20518D]">{rows.length} حصص</span></div>{rows.length === 0 ? <Empty text="لا توجد حصص مبرمجة لهذا اليوم." /> : <div className="space-y-2">{rows.map(({ placement, lesson }) => <ScheduleCard key={placement.id} placementPeriod={placement.periodIndex} lesson={lesson} periods={project.config.periods} subjects={project.subjects} teachers={project.teachers} />)}</div>}</section>;
 }
 
 function ScheduleCard({ placementPeriod, lesson, periods, subjects, teachers }: { placementPeriod: number; lesson: SavedScheduleProfile['lessons'][number] | undefined; periods: TimePeriod[]; subjects: SavedScheduleProfile['subjects']; teachers: Teacher[] }) {
@@ -247,11 +247,10 @@ function TeachersToday({ project, days }: { project: SavedScheduleProfile; days:
               type="button"
               key={`${name}-${index}`}
               onClick={() => setSelectedDay(index)}
-              className={`shrink-0 rounded-xl px-4 py-2 text-xs font-black ${
-                selectedDay === index
+              className={`shrink-0 rounded-xl px-4 py-2 text-xs font-black ${selectedDay === index
                   ? 'bg-[#20518D] text-white'
                   : 'bg-slate-100 text-slate-600'
-              }`}
+                }`}
             >
               {name}
             </button>
