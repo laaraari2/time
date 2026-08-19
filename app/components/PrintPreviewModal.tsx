@@ -469,7 +469,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                             <td key={`${cls.id}-${dIdx}-${pIdx}`} className="p-0.5 border border-slate-800 h-8 font-bold align-middle">
                               {det ? (
                                 <div className="leading-tight">
-                                 <div className="font-extrabold text-[9px]">{det.subject?.name}</div>
+                                  <div className="font-extrabold text-[9px]">{det.subject?.code}</div>
                                   
                                 </div>
                               ) : null}
