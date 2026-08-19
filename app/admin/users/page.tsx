@@ -14,6 +14,7 @@ export default function UserManagementPage() {
   const [accounts, setAccounts] = useState<TeacherAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingBulk, setGeneratingBulk] = useState(false);
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,6 +82,25 @@ export default function UserManagementPage() {
     } finally { setSaving(false); }
   };
 
+  const handleBulkGenerate = async () => {
+    if (!projectId) return;
+    if (!window.confirm('هل أنت متأكد من إنشاء حسابات لجميع أساتذة هذا المشروع بكلمات مرور مطابقة لرموزهم المختصرة؟')) return;
+
+    try {
+      setGeneratingBulk(true); setError('');
+      const response = await fetch('/api/timetable/teacher-accounts/bulk', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'تعذر إنشاء الحسابات.');
+      await loadAccounts(projectId);
+      alert(`تم إنشاء ${data.count} حساب بنجاح!`);
+    } catch (err: unknown) {
+      console.error(err); setError(err instanceof Error ? err.message : 'تعذر إنشاء الحسابات.');
+    } finally { setGeneratingBulk(false); }
+  };
+
   const handleDelete = async (teacher: TeacherAccount) => {
     if (!teacher.accountId || !window.confirm(`هل تريد حذف حساب ${teacher.name}؟`)) return;
     try {
@@ -114,7 +134,22 @@ export default function UserManagementPage() {
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-black text-slate-900">حسابات الأساتذة</h2><p className="mt-1 text-xs text-slate-500">الجدول يبقى فارغاً حتى يتم حفظ حساب أستاذ.</p></div><span className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-800">{accounts.length} حساب</span></div>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="font-black text-slate-900">حسابات الأساتذة</h2>
+                <p className="mt-1 text-xs text-slate-500">كلمة المرور الافتراضية هي نفس الرمز المختصر للأستاذ.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBulkGenerate}
+                  disabled={generatingBulk || !projectId}
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-black text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generatingBulk ? 'جاري التوليد...' : 'توليد حسابات للجميع'}
+                </button>
+                <span className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-800">{accounts.length} حساب</span>
+              </div>
+            </div>
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full min-w-[650px] text-right text-xs"><thead className="bg-slate-50 text-slate-700"><tr><th className="p-3 font-black">الأستاذ</th><th className="p-3 font-black">الرمز</th><th className="p-3 font-black">البريد</th><th className="p-3 text-center font-black">الحالة</th><th className="p-3 text-center font-black">إجراء</th></tr></thead>
                 <tbody>{accounts.map((account) => <tr key={account.id} className="border-t border-slate-100"><td className="p-3 font-black text-slate-900">{account.name}</td><td className="p-3 font-bold text-slate-500">{account.code}</td><td className="p-3 text-slate-600">{account.email || '—'}</td><td className="p-3 text-center"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">حساب مفعّل</span></td><td className="p-3 text-center"><button onClick={() => handleDelete(account)} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10px] font-black text-red-700 hover:bg-red-100"><Trash2 className="h-3.5 w-3.5" />حذف الحساب</button></td></tr>)}{!accounts.length && <tr><td colSpan={5} className="p-10 text-center"><div className="font-black text-slate-400">لا توجد حسابات محفوظة بعد</div><div className="mt-1 text-[11px] text-slate-400">اختر الأستاذ، أدخل البريد وكلمة المرور، ثم اضغط حفظ.</div></td></tr>}</tbody>
