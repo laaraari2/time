@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  TimetableConfig, Subject, Teacher, ClassGroup, 
-  Classroom, Lesson, Placement 
+import {
+  TimetableConfig, Subject, Teacher, ClassGroup,
+  Classroom, Lesson, Placement
 } from '../types';
 import { getPlacementDetails, isSlotDisabled } from '../utils/timetableGenerator';
 import { translations, Language } from '../utils/i18n';
@@ -35,6 +35,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   const [printType, setPrintType] = useState<'single_class' | 'matrix' | 'single_teacher'>('single_class');
   const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id || '');
   const [selectedTeacherId, setSelectedTeacherId] = useState(teachers[0]?.id || '');
+  const [printColors, setPrintColors] = useState(true);
 
   /**
    * Browsers may start printing before external/data images finish decoding.
@@ -468,8 +469,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                             <td key={`${cls.id}-${dIdx}-${pIdx}`} className="p-0.5 border border-slate-800 h-8 font-bold align-middle">
                               {det ? (
                                 <div className="leading-tight">
-                                  <div className="font-extrabold text-[9px]">{det.subject?.code}</div>
-                                  <div className="text-[8px] text-slate-700">{det.teacher?.code}</div>
+                                 <div className="font-extrabold text-[9px]">{det.subject?.name}</div>
+                                  
                                 </div>
                               ) : null}
                             </td>
