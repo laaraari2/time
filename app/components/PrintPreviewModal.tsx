@@ -470,7 +470,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                               {det ? (
                                 <div className="leading-tight">
                                   <div className="font-extrabold text-[9px]">{det.subject?.code}</div>
-                                  
+                               
                                 </div>
                               ) : null}
                             </td>
