@@ -37,6 +37,7 @@ export default function TeacherMobilePage() {
   const days = project?.config.days?.length ? project.config.days : fallbackDays;
   const schoolName = project?.config.schoolName?.trim() || project?.name || 'المؤسسة';
   const schoolLogo = project?.config.schoolLogo;
+  const teacherName = project?.teachers?.[0]?.name || 'الأستاذ';
 
   const rows = useMemo<Row[]>(() => {
     if (!project) return [];
@@ -62,7 +63,7 @@ export default function TeacherMobilePage() {
           <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm">
             {schoolLogo ? <img src={schoolLogo} alt="شعار المؤسسة" className="h-full w-full object-contain p-1" /> : <School className="h-6 w-6 text-[#20518D]" />}
           </div>
-          <div className="min-w-0 flex-1"><p className="text-[10px] text-white/60">TimeTables — فضاء الأستاذ</p><h1 className="truncate text-lg font-black">{schoolName}</h1><p className="truncate text-[10px] text-white/75">جدول الأستاذ</p></div>
+          <div className="min-w-0 flex-1"><p className="text-[10px] text-white/60">TimeTables — فضاء الأستاذ</p><h1 className="truncate text-lg font-black">{schoolName}</h1><p className="truncate text-[10px] text-white/75">الأستاذ(ة): {teacherName}</p></div>
           <button type="button" onClick={() => void load()} className="rounded-xl bg-white/10 p-2" aria-label="تحديث"><RefreshCw className="h-5 w-5" /></button>
           <button type="button" onClick={async () => { await createSupabaseBrowserClient().auth.signOut(); window.location.replace('/mobile-v2/login'); }} className="rounded-xl bg-red-500/20 p-2" aria-label="تسجيل الخروج"><LogOut className="h-5 w-5" /></button>
         </div>
