@@ -87,6 +87,7 @@ export const DataModal: React.FC<DataModalProps> = ({
   const [teacherCode, setTeacherCode] = useState('');
   const [teacherName, setTeacherName] = useState('');
   const [teacherSubjectId, setTeacherSubjectId] = useState('');
+  const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
 
   // =========================================================
   // CLASS FORM
@@ -200,14 +201,14 @@ export const DataModal: React.FC<DataModalProps> = ({
       subjects.map((item) =>
         item.id === subject.id
           ? {
-              ...item,
-              name: name.trim(),
-              code: code.trim().toUpperCase(),
-              defaultWeeklyHours: Math.max(
-                1,
-                Math.round(weeklyHours)
-              ),
-            }
+            ...item,
+            name: name.trim(),
+            code: code.trim().toUpperCase(),
+            defaultWeeklyHours: Math.max(
+              1,
+              Math.round(weeklyHours)
+            ),
+          }
           : item
       )
     );
@@ -672,16 +673,16 @@ export const DataModal: React.FC<DataModalProps> = ({
       classes.map((item) =>
         item.id === classGroup.id
           ? {
-              ...item,
-              name: name.trim(),
-              code: code.trim(),
-              gradeLevel:
-                gradeLevel.trim(),
-              studentCount: Math.max(
-                1,
-                Math.round(studentCount)
-              ),
-            }
+            ...item,
+            name: name.trim(),
+            code: code.trim(),
+            gradeLevel:
+              gradeLevel.trim(),
+            studentCount: Math.max(
+              1,
+              Math.round(studentCount)
+            ),
+          }
           : item
       )
     );
@@ -822,16 +823,16 @@ export const DataModal: React.FC<DataModalProps> = ({
       rooms.map((item) =>
         item.id === room.id
           ? {
-              ...item,
-              name: name.trim(),
-              code: code.trim(),
-              capacity: Math.max(
-                1,
-                Math.round(capacity)
-              ),
-              type:
-                normalizedType as Classroom['type'],
-            }
+            ...item,
+            name: name.trim(),
+            code: code.trim(),
+            capacity: Math.max(
+              1,
+              Math.round(capacity)
+            ),
+            type:
+              normalizedType as Classroom['type'],
+          }
           : item
       )
     );
@@ -850,9 +851,9 @@ export const DataModal: React.FC<DataModalProps> = ({
       classes.map((cls) =>
         cls.homeRoomId === id
           ? {
-              ...cls,
-              homeRoomId: undefined,
-            }
+            ...cls,
+            homeRoomId: undefined,
+          }
           : cls
       )
     );
@@ -861,10 +862,10 @@ export const DataModal: React.FC<DataModalProps> = ({
       lessons.map((lesson) =>
         lesson.preferredRoomId === id
           ? {
-              ...lesson,
-              preferredRoomId:
-                undefined,
-            }
+            ...lesson,
+            preferredRoomId:
+              undefined,
+          }
           : lesson
       )
     );
@@ -873,9 +874,9 @@ export const DataModal: React.FC<DataModalProps> = ({
       placements.map((placement) =>
         placement.roomId === id
           ? {
-              ...placement,
-              roomId: undefined,
-            }
+            ...placement,
+            roomId: undefined,
+          }
           : placement
       )
     );
@@ -1041,19 +1042,19 @@ export const DataModal: React.FC<DataModalProps> = ({
       lessons.map((item) =>
         item.id === lesson.id
           ? {
-              ...item,
-              weeklyPeriods:
-                Math.max(
-                  1,
-                  Math.round(
-                    weeklyPeriods
-                  )
-                ),
-              isDoublePeriod:
-                lesson.isDoublePeriod
-                  ? !isDouble
-                  : isDouble,
-            }
+            ...item,
+            weeklyPeriods:
+              Math.max(
+                1,
+                Math.round(
+                  weeklyPeriods
+                )
+              ),
+            isDoublePeriod:
+              lesson.isDoublePeriod
+                ? !isDouble
+                : isDouble,
+          }
           : item
       )
     );
@@ -1109,11 +1110,10 @@ export const DataModal: React.FC<DataModalProps> = ({
             onClick={() =>
               setCurrentTab('subjects')
             }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${
-              currentTab === 'subjects'
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${currentTab === 'subjects'
                 ? 'bg-white text-blue-900 shadow-xs border border-slate-300'
                 : 'text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
           >
             <BookOpen className="w-4 h-4 text-indigo-600" />
             <span>
@@ -1125,11 +1125,10 @@ export const DataModal: React.FC<DataModalProps> = ({
             onClick={() =>
               setCurrentTab('teachers')
             }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${
-              currentTab === 'teachers'
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${currentTab === 'teachers'
                 ? 'bg-white text-blue-900 shadow-xs border border-slate-300'
                 : 'text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
           >
             <Users className="w-4 h-4 text-teal-600" />
             <span>
@@ -1141,11 +1140,10 @@ export const DataModal: React.FC<DataModalProps> = ({
             onClick={() =>
               setCurrentTab('classes')
             }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${
-              currentTab === 'classes'
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${currentTab === 'classes'
                 ? 'bg-white text-blue-900 shadow-xs border border-slate-300'
                 : 'text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
           >
             <School className="w-4 h-4 text-violet-600" />
             <span>
@@ -1157,11 +1155,10 @@ export const DataModal: React.FC<DataModalProps> = ({
             onClick={() =>
               setCurrentTab('rooms')
             }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${
-              currentTab === 'rooms'
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${currentTab === 'rooms'
                 ? 'bg-white text-blue-900 shadow-xs border border-slate-300'
                 : 'text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
           >
             <DoorOpen className="w-4 h-4 text-orange-600" />
             <span>
@@ -1173,11 +1170,10 @@ export const DataModal: React.FC<DataModalProps> = ({
             onClick={() =>
               setCurrentTab('lessons')
             }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${
-              currentTab === 'lessons'
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md transition cursor-pointer whitespace-nowrap ${currentTab === 'lessons'
                 ? 'bg-white text-blue-900 shadow-xs border border-slate-300'
                 : 'text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
             title="إضافة حصة"
           >
             <ListPlus className="w-4 h-4 text-sky-600" />
@@ -1271,7 +1267,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                   />
                 </div>
 
-                
+
 
                 <button
                   type="submit"
@@ -1287,7 +1283,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                   <div
                     key={sub.id}
                     className="p-2.5 bg-white rounded-lg border border-slate-200 shadow-2xs flex items-center justify-between"
-                    
+
                   >
                     <div>
                       <div className="font-extrabold text-xs text-slate-900">
@@ -1425,9 +1421,25 @@ export const DataModal: React.FC<DataModalProps> = ({
                 </div>
               </div>
 
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="ابحث عن أستاذ بالاسم أو الرمز..."
+                  value={teacherSearchQuery}
+                  onChange={(e) => setTeacherSearchQuery(e.target.value)}
+                  className="w-full text-xs p-3 pl-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
 
-                {teachers.map((t) => {
+                {teachers.filter(t =>
+                  t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()) ||
+                  t.code.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+                ).map((t) => {
                   const teacherLessons =
                     lessons.filter(
                       (l) =>
@@ -1443,22 +1455,22 @@ export const DataModal: React.FC<DataModalProps> = ({
                       )
                     ).size;
 
-               const totalWeeklyHours =
-  teacherLessons.reduce(
-    (sum, l) =>
-      sum +
-      (l.weeklyPeriods || 0) *
-        (l.isDoublePeriod ? 2 : 1),
-    0
-  );
+                  const totalWeeklyHours =
+                    teacherLessons.reduce(
+                      (sum, l) =>
+                        sum +
+                        (l.weeklyPeriods || 0) *
+                        (l.isDoublePeriod ? 2 : 1),
+                      0
+                    );
 
                   const hasGroupSplit =
                     teacherLessons.some(
                       (l) =>
                         l.groupType ===
-                          'G1' ||
+                        'G1' ||
                         l.groupType ===
-                          'G2'
+                        'G2'
                     );
 
                   const hasDouble =
@@ -1491,7 +1503,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                                 type="color"
                                 value={t.color || '#FFFFFF'}
                                 onChange={(e) => {
-                                  const newTeachers = teachers.map(teacher => 
+                                  const newTeachers = teachers.map(teacher =>
                                     teacher.id === t.id ? { ...teacher, color: e.target.value } : teacher
                                   );
                                   onUpdateTeachers(newTeachers);
@@ -1523,23 +1535,23 @@ export const DataModal: React.FC<DataModalProps> = ({
 
                         {teacherSubjects.length >
                           0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
+                            <div className="flex flex-wrap gap-1 mt-2">
 
-                            {teacherSubjects.map(
-                              (subject) => (
-                                <span
-                                  key={
-                                    subject.id
-                                  }
-                                  className="bg-indigo-50 text-indigo-900 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-200"
-                                >
-                                  {subject.code}
-                                </span>
-                              )
-                            )}
+                              {teacherSubjects.map(
+                                (subject) => (
+                                  <span
+                                    key={
+                                      subject.id
+                                    }
+                                    className="bg-indigo-50 text-indigo-900 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-200"
+                                  >
+                                    {subject.code}
+                                  </span>
+                                )
+                              )}
 
-                          </div>
-                        )}
+                            </div>
+                          )}
 
                         {/* SUMMARY */}
 
@@ -1615,7 +1627,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                 <TeacherAssignModal
                   teacher={
                     activeTeacherForAssignment ===
-                    'new'
+                      'new'
                       ? null
                       : activeTeacherForAssignment
                   }
@@ -1643,7 +1655,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                         teachers.map(
                           (t) =>
                             t.id ===
-                            savedTeacher.id
+                              savedTeacher.id
                               ? savedTeacher
                               : t
                         )
@@ -1688,7 +1700,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                       teachers.map(
                         (t) =>
                           t.id ===
-                          updated.id
+                            updated.id
                             ? updated
                             : t
                       )
@@ -2018,7 +2030,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                       {!lsnSubjectId
                         ? 'اختر المادة أولاً...'
                         : filteredTeachersForLesson.length ===
-                            0
+                          0
                           ? 'لا يوجد أستاذ لهذه المادة'
                           : 'اختر الأستاذ...'}
                     </option>
@@ -2083,7 +2095,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                     onChange={(e) =>
                       setLsnIsDoublePeriod(
                         e.target.value ===
-                          'double'
+                        'double'
                       )
                     }
                     className="w-full text-xs p-2 border border-slate-300 rounded bg-white"
@@ -2139,8 +2151,8 @@ export const DataModal: React.FC<DataModalProps> = ({
                       <th className="p-2.5 text-center">
                         نوع الحصة
                       </th>
-                        <th className="p-2.5 text-center">
-                       عدد الساعات
+                      <th className="p-2.5 text-center">
+                        عدد الساعات
                       </th>
 
 
@@ -2191,7 +2203,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                               style={{
                                 color:
                                   s?.color &&
-                                  s.color !==
+                                    s.color !==
                                     '#E5E7EB'
                                     ? s.color
                                     : '#111827',
@@ -2214,11 +2226,10 @@ export const DataModal: React.FC<DataModalProps> = ({
                             <td className="p-2.5 text-center">
 
                               <span
-                                className={`inline-flex px-2 py-1 rounded-full font-bold ${
-                                  lsn.isDoublePeriod
+                                className={`inline-flex px-2 py-1 rounded-full font-bold ${lsn.isDoublePeriod
                                     ? 'bg-amber-100 text-amber-700'
                                     : 'bg-slate-100 text-slate-600'
-                                }`}
+                                  }`}
                               >
                                 {lsn.isDoublePeriod
                                   ? 'مزدوجة'
@@ -2227,11 +2238,11 @@ export const DataModal: React.FC<DataModalProps> = ({
 
                             </td>
 
-                          <td className="p-2.5 text-center font-extrabold text-blue-900">
-  {(lsn.weeklyPeriods || 0) *
-    (lsn.isDoublePeriod ? 2 : 1)}
-</td>
-                             <td className="p-2.5 text-center">
+                            <td className="p-2.5 text-center font-extrabold text-blue-900">
+                              {(lsn.weeklyPeriods || 0) *
+                                (lsn.isDoublePeriod ? 2 : 1)}
+                            </td>
+                            <td className="p-2.5 text-center">
 
                               <div className="flex items-center justify-center gap-1">
 
