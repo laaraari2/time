@@ -112,6 +112,7 @@ export const DataModal: React.FC<DataModalProps> = ({
   const [lsnTeacherId, setLsnTeacherId] = useState('');
   const [lsnHours, setLsnHours] = useState(4);
   const [lsnIsDoublePeriod, setLsnIsDoublePeriod] = useState(false);
+  const [lessonSearchQuery, setLessonSearchQuery] = useState('');
 
   // =========================================================
   // SUBJECT HANDLERS
@@ -629,14 +630,14 @@ export const DataModal: React.FC<DataModalProps> = ({
     classGroup: ClassGroup
   ) => {
     const name = window.prompt(
-      'اسم الفصل:',
+      'اسم القسم:',
       classGroup.name
     );
 
     if (name === null) return;
 
     const code = window.prompt(
-      'رمز الفصل:',
+      'رمز القسم:',
       classGroup.code
     );
 
@@ -1724,7 +1725,7 @@ export const DataModal: React.FC<DataModalProps> = ({
               >
                 <div className="flex-1 min-w-[120px]">
                   <label className="text-xs font-bold text-slate-600 mb-1 block">
-                    رمز الفصل:
+                    رمز القسم:
                   </label>
 
                   <input
@@ -1946,7 +1947,7 @@ export const DataModal: React.FC<DataModalProps> = ({
 
                 <div className="flex-1 min-w-[120px]">
                   <label className="text-xs font-bold text-slate-600 mb-1 block">
-                    الفصل:
+                    القسم:
                   </label>
 
                   <select
@@ -1960,7 +1961,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                     required
                   >
                     <option value="">
-                      اختر الفصل...
+                      اختر القسم...
                     </option>
 
                     {classes.map((c) => (
@@ -2126,6 +2127,19 @@ export const DataModal: React.FC<DataModalProps> = ({
 
               {/* LESSONS TABLE */}
 
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="ابحث عن حصة باسم الأستاذ، المادة، أو القسم..."
+                  value={lessonSearchQuery}
+                  onChange={(e) => setLessonSearchQuery(e.target.value)}
+                  className="w-full text-xs p-3 pl-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+              </div>
+
               <div className="overflow-x-auto border border-slate-200 rounded-lg">
 
                 <table className="w-full text-right text-xs">
@@ -2133,7 +2147,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                   <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
                     <tr>
                       <th className="p-2.5">
-                        الفصل
+                        القسم
                       </th>
 
                       <th className="p-2.5">
@@ -2164,7 +2178,21 @@ export const DataModal: React.FC<DataModalProps> = ({
 
                   <tbody>
 
-                    {lessons.map(
+                    {lessons.filter(lsn => {
+                      if (!lessonSearchQuery) return true;
+                      const c = classes.find(item => item.id === lsn.classGroupId);
+                      const s = subjects.find(item => item.id === lsn.subjectId);
+                      const t = teachers.find(item => item.id === lsn.teacherId);
+                      const query = lessonSearchQuery.toLowerCase();
+                      return (
+                        (c?.code?.toLowerCase() || '').includes(query) ||
+                        (c?.name?.toLowerCase() || '').includes(query) ||
+                        (s?.name?.toLowerCase() || '').includes(query) ||
+                        (s?.code?.toLowerCase() || '').includes(query) ||
+                        (t?.name?.toLowerCase() || '').includes(query) ||
+                        (t?.code?.toLowerCase() || '').includes(query)
+                      );
+                    }).map(
                       (lsn) => {
                         const c =
                           classes.find(
