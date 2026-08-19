@@ -117,7 +117,7 @@ export default function UserManagementPage() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#123E70] to-[#2B68B1] p-4 text-white shadow-lg">
           <div className="flex items-center gap-3"><div className="rounded-xl bg-white/10 p-2"><Users className="h-6 w-6 text-amber-300" /></div><div><h1 className="text-lg font-black">إدارة المستخدمين</h1><p className="text-xs text-white/70">إنشاء حسابات دخول للأساتذة وربط كل حساب بأستاذه.</p></div></div>
-          <button onClick={() => window.location.assign('/mobile-v2/teacher')} className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-black hover:bg-white/20"><ArrowRight className="h-4 w-4" />الرجوع</button>
+          <button onClick={() => window.location.assign('/')} className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-black hover:bg-white/20"><ArrowRight className="h-4 w-4" />الرجوع</button>
         </div>
         {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">{error}</div>}
 
