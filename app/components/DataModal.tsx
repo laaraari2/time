@@ -1287,12 +1287,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                   <div
                     key={sub.id}
                     className="p-2.5 bg-white rounded-lg border border-slate-200 shadow-2xs flex items-center justify-between"
-                    style={{
-                      borderRightWidth:
-                        '6px',
-                      borderRightColor:
-                        sub.color,
-                    }}
+                    
                   >
                     <div>
                       <div className="font-extrabold text-xs text-slate-900">
@@ -1494,7 +1489,7 @@ export const DataModal: React.FC<DataModalProps> = ({
                               {t.code}
                               <input
                                 type="color"
-                                value={t.color || '#3B82F6'}
+                                value={t.color || '#FFFFFF'}
                                 onChange={(e) => {
                                   const newTeachers = teachers.map(teacher => 
                                     teacher.id === t.id ? { ...teacher, color: e.target.value } : teacher

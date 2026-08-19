@@ -32,7 +32,7 @@ export const TeacherAssignModal: React.FC<TeacherAssignModalProps> = ({
   // Basic Info State
   const [teacherCode, setTeacherCode] = useState(teacher?.code || '');
   const [teacherName, setTeacherName] = useState(teacher?.name || '');
-  const [teacherColor, setTeacherColor] = useState(teacher?.color || '#3B82F6');
+  const [teacherColor, setTeacherColor] = useState(teacher?.color || '#FFFFFF');
   const [teacherTextColor, setTeacherTextColor] = useState(teacher?.textColor || '#FFFFFF');
   const [selectedSubjectId, setSelectedSubjectId] = useState(
     teacher?.subjectIds?.[0] || (subjects[0]?.id ?? '')
