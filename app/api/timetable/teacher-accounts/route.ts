@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 import { requireSupabaseUser } from '../../../lib/supabase/server';
+import { getTimetableUserRole } from '../../../lib/projects';
 import { createSupabaseAdminClient } from '../../../lib/supabase/admin';
 
 async function requireManager() {
-  // Authentication is handled here; authorization is enforced per project
-  // below using the project's owner_id. This avoids depending on the optional
-  // get_timetable_user_role RPC for the manager UI.
   const { supabase, user } = await requireSupabaseUser();
-  return { supabase, user };
+  if (!user) return { supabase, user, isManager: false };
+  const role = await getTimetableUserRole();
+  return { supabase, user, isManager: role === 'manager' };
 }
 
 export async function GET(request: Request) {
   try {
-    const { user } = await requireManager();
-    if (!user) return NextResponse.json({ error: 'غير مصرح.' }, { status: 403 });
+    const { user, isManager } = await requireManager();
+    if (!user || !isManager) return NextResponse.json({ error: 'غير مصرح.' }, { status: 403 });
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
@@ -24,11 +24,14 @@ export async function GET(request: Request) {
       .from('projects')
       .select('id,name,teachers')
       .eq('id', projectId)
-      .eq('owner_id', user.id)
       .maybeSingle();
 
     if (projectError) throw projectError;
     if (!project) return NextResponse.json({ error: 'المشروع غير موجود.' }, { status: 404 });
+    if (user.app_metadata?.role !== 'admin') {
+      const { data: ownedProject } = await admin.from('projects').select('id').eq('id', projectId).eq('owner_id', user.id).maybeSingle();
+      if (!ownedProject) return NextResponse.json({ error: 'المشروع غير موجود.' }, { status: 404 });
+    }
 
     const { data: accounts, error: accountsError } = await admin
       .from('teacher_accounts')
@@ -73,8 +76,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { user } = await requireManager();
-    if (!user) return NextResponse.json({ error: 'غير مصرح.' }, { status: 403 });
+    const { user, isManager } = await requireManager();
+    if (!user || !isManager) return NextResponse.json({ error: 'غير مصرح.' }, { status: 403 });
 
     const body = await request.json();
     const projectId = String(body.projectId ?? '').trim();
@@ -96,11 +99,14 @@ export async function POST(request: Request) {
       .from('projects')
       .select('id,teachers')
       .eq('id', projectId)
-      .eq('owner_id', user.id)
       .maybeSingle();
 
     if (projectError) throw projectError;
     if (!project) return NextResponse.json({ error: 'المشروع غير موجود.' }, { status: 404 });
+    if (user.app_metadata?.role !== 'admin') {
+      const { data: ownedProject } = await admin.from('projects').select('id').eq('id', projectId).eq('owner_id', user.id).maybeSingle();
+      if (!ownedProject) return NextResponse.json({ error: 'المشروع غير موجود.' }, { status: 404 });
+    }
 
     const teachers = Array.isArray(project.teachers) ? project.teachers : [];
     const teacher = teachers.find((item: any) => item.id === teacherId);
@@ -160,8 +166,8 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { user } = await requireManager();
-    if (!user) return NextResponse.json({ error: 'غير مصرح.' }, { status: 403 });
+    const { user, isManager } = await requireManager();
+    if (!user || !isManager) return NextResponse.json({ error: 'غير مصرح.' }, { status: 403 });
 
     const body = await request.json();
     const projectId = String(body.projectId ?? '').trim();
@@ -173,9 +179,12 @@ export async function DELETE(request: Request) {
       .from('projects')
       .select('id')
       .eq('id', projectId)
-      .eq('owner_id', user.id)
       .maybeSingle();
     if (!project) return NextResponse.json({ error: 'المشروع غير موجود.' }, { status: 404 });
+    if (user.app_metadata?.role !== 'admin') {
+      const { data: ownedProject } = await admin.from('projects').select('id').eq('id', projectId).eq('owner_id', user.id).maybeSingle();
+      if (!ownedProject) return NextResponse.json({ error: 'المشروع غير موجود.' }, { status: 404 });
+    }
 
     const { data: account, error: accountError } = await admin
       .from('teacher_accounts')

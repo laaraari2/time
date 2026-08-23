@@ -90,6 +90,17 @@ function restrictProjectForTeacher(row: ProjectRow, teacherId: string): ProjectR
 export async function listProjects(): Promise<ProjectRecord[]> {
   const { supabase, user } = await requireSupabaseUser();
   if (!user) return [];
+  const isAdmin = user.app_metadata?.role === 'admin';
+
+  if (isAdmin) {
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin
+      .from('projects')
+      .select('id,name,created_at,updated_at,config,subjects,teachers,classes,rooms,lessons,placements')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return ((data ?? []) as ProjectRow[]).map(mapProject);
+  }
 
   // This RPC is the preferred authorization boundary for mobile access. Owners receive
   // their full projects; teachers receive only their own teacher/lessons/classes.

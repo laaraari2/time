@@ -6,6 +6,7 @@ import { ArrowRight, KeyRound, Mail, Trash2, UserPlus, Users } from 'lucide-reac
 interface ProjectTeacher { id: string; code?: string; name?: string; }
 interface Project { id: string; name: string; teachers?: ProjectTeacher[]; }
 interface TeacherAccount { id: string; code: string; name: string; accountId: string | null; userId: string | null; email: string; }
+interface AdminAccount { id: string; email: string; name: string; createdAt: string; lastSignIn: string | null; }
 
 export default function UserManagementPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -19,8 +20,63 @@ export default function UserManagementPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [teacherId, setTeacherId] = useState('');
+  const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([]);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminName, setAdminName] = useState('');
+  const [savingAdmin, setSavingAdmin] = useState(false);
 
   const currentTeacher = useMemo(() => projectTeachers.find((teacher) => teacher.id === teacherId), [projectTeachers, teacherId]);
+
+  const loadAdminAccounts = async () => {
+    try {
+      const response = await fetch('/api/timetable/admin-accounts', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'تعذر تحميل حسابات الإدارة.');
+      setAdminAccounts(Array.isArray(data.admins) ? data.admins : []);
+    } catch (loadError: unknown) {
+      console.error(loadError);
+      setError(loadError instanceof Error ? loadError.message : 'تعذر تحميل حسابات الإدارة.');
+    }
+  };
+
+  const handleCreateAdmin = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!adminEmail.trim() || !adminPassword) return;
+    try {
+      setSavingAdmin(true); setError('');
+      const response = await fetch('/api/timetable/admin-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: adminEmail.trim(), password: adminPassword, name: adminName.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'تعذر إنشاء حساب الإدارة.');
+      setAdminEmail(''); setAdminPassword(''); setAdminName('');
+      await loadAdminAccounts();
+    } catch (createError: unknown) {
+      console.error(createError);
+      setError(createError instanceof Error ? createError.message : 'تعذر إنشاء حساب الإدارة.');
+    } finally { setSavingAdmin(false); }
+  };
+
+  const handleDeleteAdmin = async (account: AdminAccount) => {
+    if (!window.confirm(`هل تريد حذف حساب الإدارة ${account.email}؟`)) return;
+    try {
+      setError('');
+      const response = await fetch('/api/timetable/admin-accounts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: account.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'تعذر حذف حساب الإدارة.');
+      await loadAdminAccounts();
+    } catch (deleteError: unknown) {
+      console.error(deleteError);
+      setError(deleteError instanceof Error ? deleteError.message : 'تعذر حذف حساب الإدارة.');
+    }
+  };
 
   const loadAccounts = async (selectedProjectId: string) => {
     if (!selectedProjectId) { setAccounts([]); return; }
@@ -39,6 +95,7 @@ export default function UserManagementPage() {
     const loadProjects = async () => {
       try {
         setError('');
+        void loadAdminAccounts();
         const response = await fetch('/api/timetable/profiles', { cache: 'no-store' });
         if (!response.ok) throw new Error('تعذر تحميل المشاريع.');
         const data = await response.json();
@@ -120,6 +177,27 @@ export default function UserManagementPage() {
           <button onClick={() => window.history.back()} className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-black hover:bg-white/20"><ArrowRight className="h-4 w-4" />الرجوع</button>
         </div>
         {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-700">{error}</div>}
+
+        <div className="mb-4 grid gap-4 lg:grid-cols-[360px_1fr]">
+          <section className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2"><UserPlus className="h-5 w-5 text-amber-600" /><div><h2 className="font-black text-slate-900">إنشاء حساب الحارس العام</h2><p className="mt-1 text-[10px] font-bold text-slate-500">حساب إدارة كامل مثل المدير.</p></div></div>
+            <form onSubmit={handleCreateAdmin} className="space-y-3">
+              <div><label className="mb-1 block text-xs font-black text-slate-700">اسم المستخدم</label><input value={adminName} onChange={(e) => setAdminName(e.target.value)} placeholder="الحارس العام" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+              <div><label className="mb-1 block text-xs font-black text-slate-700">البريد الإلكتروني</label><div className="relative"><Mail className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="gardien@example.com" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm" required /></div></div>
+              <div><label className="mb-1 block text-xs font-black text-slate-700">كلمة المرور</label><div className="relative"><KeyRound className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="password" minLength={8} value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="8 أحرف على الأقل" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm" required /></div></div>
+              <button disabled={savingAdmin} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"><UserPlus className="h-4 w-4" />{savingAdmin ? 'جاري الإنشاء...' : 'إنشاء حساب الحارس العام'}</button>
+            </form>
+          </section>
+
+          <section className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-2"><div><h2 className="font-black text-slate-900">حسابات الإدارة</h2><p className="mt-1 text-xs text-slate-500">هذه الحسابات لها صلاحيات المدير على جميع المشاريع.</p></div><span className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-800">{adminAccounts.length} حساب</span></div>
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[600px] text-right text-xs"><thead className="bg-slate-50 text-slate-700"><tr><th className="p-3 font-black">الاسم</th><th className="p-3 font-black">البريد</th><th className="p-3 font-black">آخر دخول</th><th className="p-3 text-center font-black">إجراء</th></tr></thead>
+                <tbody>{adminAccounts.map((account) => <tr key={account.id} className="border-t border-slate-100"><td className="p-3 font-black text-slate-900">{account.name || 'الحارس العام'}</td><td className="p-3 text-slate-600">{account.email}</td><td className="p-3 text-slate-500">{account.lastSignIn ? new Date(account.lastSignIn).toLocaleString('fr-FR') : 'لم يدخل بعد'}</td><td className="p-3 text-center"><button onClick={() => handleDeleteAdmin(account)} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10px] font-black text-red-700 hover:bg-red-100"><Trash2 className="h-3.5 w-3.5" />حذف</button></td></tr>)}{!adminAccounts.length && <tr><td colSpan={4} className="p-8 text-center font-bold text-slate-400">لا توجد حسابات إدارة إضافية.</td></tr>}</tbody>
+              </table>
+            </div>
+          </section>
+        </div>
 
         <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
