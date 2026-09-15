@@ -37,70 +37,6 @@ const key = (
 
 
 /**
- * تحديد الفترة:
- *
- * morning   = الصباح
- * afternoon = الزوال
- *
- * نعتمد على وقت بداية الحصة.
- * أي حصة تبدأ قبل 13:00 تعتبر صباحية،
- * وأي حصة تبدأ من 13:00 فما فوق تعتبر زوالية.
- */
-type Shift = 'morning' | 'afternoon';
-
-
-function getPeriodShift(
-  config: TimetableConfig,
-  periodIndex: number
-): Shift {
-  const period = config.periods?.[periodIndex];
-
-  if (!period) {
-    return 'morning';
-  }
-
-  const startTime = period.startTime || '';
-
-  const match = startTime.match(/^(\d{1,2})(?::(\d{1,2}))?/);
-
-  if (!match) {
-    /*
-     * إذا لم نستطع قراءة الوقت،
-     * نستخدم تقسيم الحصص إلى نصفين كحل احتياطي.
-     */
-    const middle = Math.ceil(
-      config.periods.length / 2
-    );
-
-    return periodIndex < middle
-      ? 'morning'
-      : 'afternoon';
-  }
-
-  const hour = Number(match[1]);
-
-  return hour < 13
-    ? 'morning'
-    : 'afternoon';
-}
-
-
-/**
- * مفتاح الأستاذ + القسم + اليوم.
- *
- * هذا هو أساس التعارض الجديد:
- *
- * الأستاذ نفسه + نفس القسم + نفس اليوم
- * لا يمكن أن يجمع بين الصباح والزوال.
- */
-const teacherClassDayKey = (
-  day: number,
-  teacherId: string,
-  classId: string
-) => `${day}|${teacherId}|${classId}`;
-
-
-/**
  * فحص جميع التعارضات.
  */
 export function checkConflicts(
@@ -127,18 +63,6 @@ export function checkConflicts(
     new Map<string, Placement[]>();
 
   const teacherDailyOccupancy =
-    new Map<string, Placement[]>();
-
-  /*
-   * استعمال الأستاذ مع القسم في كل فترة من اليوم.
-   *
-   * key:
-   * day|teacherId|classId
-   *
-   * value:
-   * placements الخاصة بهذا الأستاذ والقسم في هذا اليوم.
-   */
-  const teacherClassDayOccupancy =
     new Map<string, Placement[]>();
 
 
@@ -218,32 +142,6 @@ export function checkConflicts(
       classKey,
       [
         ...existingClassPlacements,
-        p,
-      ]
-    );
-
-
-    /*
-     * التعارض الجديد:
-     *
-     * الأستاذ + نفس القسم + نفس اليوم.
-     */
-    const teacherClassKey =
-      teacherClassDayKey(
-        p.dayIndex,
-        lesson.teacherId,
-        lesson.classGroupId
-      );
-
-    const existingTeacherClass =
-      teacherClassDayOccupancy.get(
-        teacherClassKey
-      ) || [];
-
-    teacherClassDayOccupancy.set(
-      teacherClassKey,
-      [
-        ...existingTeacherClass,
         p,
       ]
     );
@@ -397,94 +295,7 @@ export function checkConflicts(
 
   /*
    * -------------------------------------------------------
-   * 3. التعارض الجديد:
-   *
-   * نفس الأستاذ + نفس القسم + نفس اليوم
-   * صباحاً وزوالاً.
-   *
-   * مثال:
-   *
-   * لعرعري + 1 إعدادي 1 + الاثنين
-   * صباحاً
-   *
-   * و
-   *
-   * لعرعري + 1 إعدادي 1 + الاثنين
-   * زوالاً
-   *
-   * = تعارض.
-   *
-   * أما:
-   *
-   * لعرعري + 1 إعدادي 1 صباحاً
-   * لعرعري + 1 إعدادي 2 زوالاً
-   *
-   * = مسموح.
-   * -------------------------------------------------------
-   */
-  for (
-    const [teacherClassKeyValue, list]
-    of teacherClassDayOccupancy
-  ) {
-    const shifts = new Set<Shift>();
-
-    for (const placement of list) {
-      shifts.add(
-        getPeriodShift(
-          config,
-          placement.periodIndex
-        )
-      );
-    }
-
-
-    if (
-      shifts.has('morning') &&
-      shifts.has('afternoon')
-    ) {
-      const parts =
-        teacherClassKeyValue.split('|');
-
-      const dayIndex =
-        Number(parts[0]);
-
-      const teacherId =
-        parts[1];
-
-      const classId =
-        parts[2];
-
-      const teacher =
-        teachers.find(
-          (t) => t.id === teacherId
-        );
-
-      const classGroup =
-        classes.find(
-          (c) => c.id === classId
-        );
-
-
-      conflicts.push({
-        id: `conf-teacher-class-shift-${teacherClassKeyValue}`,
-        type:
-          'teacher_class_shift_conflict',
-        message:
-          `تعارض صباح/زوال: الأستاذ (${teacher?.name || 'أستاذ مجهول'}) يدرس نفس القسم (${classGroup?.code || 'قسم مجهول'}) صباحاً وزوالاً في نفس اليوم. لا يسمح بتدريس نفس الأستاذ لنفس القسم في الفترتين في اليوم نفسه.`,
-        severity: 'error',
-        placementIds:
-          list.map((p) => p.id),
-        dayIndex,
-        periodIndex:
-          list[0].periodIndex,
-      });
-    }
-  }
-
-
-  /*
-   * -------------------------------------------------------
-   * 4. تعارض القاعة في نفس التوقيت
+   * 3. تعارض القاعة في نفس التوقيت
    * -------------------------------------------------------
    */
   for (const [k, list] of roomOccupancy) {
@@ -574,20 +385,6 @@ export function autoGenerateTimetable(
 
   const subjectDayPeriods =
     new Map<string, Set<string>>();
-
-
-  /*
-   * التعارض الجديد أثناء التوليد:
-   *
-   * الأستاذ + القسم + اليوم
-   *
-   * نسجل هل استُعمل صباحاً أو زوالاً.
-   */
-  const teacherClassDayShifts =
-    new Map<
-      string,
-      Set<Shift>
-    >();
 
 
   const placements: Placement[] =
@@ -737,38 +534,6 @@ export function autoGenerateTimetable(
       .add(
         `${day}|${period}`
       );
-
-
-    /*
-     * تسجيل الصباح/الزوال للأستاذ والقسم.
-     */
-    const teacherClassKey =
-      teacherClassDayKey(
-        day,
-        lesson.teacherId,
-        lesson.classGroupId
-      );
-
-    const shift =
-      getPeriodShift(
-        config,
-        period
-      );
-
-    if (
-      !teacherClassDayShifts.has(
-        teacherClassKey
-      )
-    ) {
-      teacherClassDayShifts.set(
-        teacherClassKey,
-        new Set()
-      );
-    }
-
-    teacherClassDayShifts
-      .get(teacherClassKey)!
-      .add(shift);
   };
 
 
@@ -830,62 +595,6 @@ export function autoGenerateTimetable(
       return {
         ok: false,
       };
-    }
-
-    /*
-     * -----------------------------------------------------
-     * التعارض الجديد:
-     *
-     * إذا كان الأستاذ قد درّس نفس القسم صباحاً،
-     * لا نسمح بوضعه في الزوال.
-     *
-     * وإذا درّسه في الزوال، لا نسمح بوضعه صباحاً.
-     * -----------------------------------------------------
-     */
-    const teacherClassKey =
-      teacherClassDayKey(
-        day,
-        lesson.teacherId,
-        lesson.classGroupId
-      );
-
-    const existingShifts =
-      teacherClassDayShifts.get(
-        teacherClassKey
-      ) ||
-      new Set<Shift>();
-
-
-    for (
-      let offset = 0;
-      offset < length;
-      offset++
-    ) {
-      const period =
-        startPeriod + offset;
-
-      const candidateShift =
-        getPeriodShift(
-          config,
-          period
-        );
-
-      const oppositeShift =
-        candidateShift ===
-        'morning'
-          ? 'afternoon'
-          : 'morning';
-
-
-      if (
-        existingShifts.has(
-          oppositeShift
-        )
-      ) {
-        return {
-          ok: false,
-        };
-      }
     }
 
 
