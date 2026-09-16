@@ -9,3 +9,7 @@ export function getTeacherAuthPassword(loginId: string): string {
   const value = loginId.trim();
   return value.length >= 6 ? value : `${value}${SHORT_TEACHER_PASSWORD_SUFFIX}`;
 }
+
+export function normalizeTeacherLoginEmail(loginId: string): string {
+  return `${encodeURIComponent(loginId.trim()).replace(/%/g, '_').toLowerCase()}@prof.com`;
+}
