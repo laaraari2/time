@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from './supabase/admin';
+import { getTeacherAuthPassword } from './teacherAuth';
 
 type TeacherAccountInput = {
   id?: string | null;
@@ -21,7 +22,7 @@ export async function syncTeacherAccounts(projectId: string, teachers: TeacherAc
     // teacher's login ID. Keep the internal teacher.id for timetable links.
     const safeLoginId = encodeURIComponent(loginId).replace(/%/g, '_').toLowerCase();
     const email = `${safeLoginId}@prof.com`;
-    const password = loginId;
+    const password = getTeacherAuthPassword(loginId);
     let user = usersByEmail.get(email);
 
     if (!user) {
