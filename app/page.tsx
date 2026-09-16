@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from './lib/supabase/browser';
 import { getTeacherAuthPassword, normalizeTeacherLoginEmail } from './lib/teacherAuth';
 import { Users, Calendar, Sparkles } from 'lucide-react';
-
 import { SavedScheduleProfile } from './types';
 import { Dashboard } from './components/Dashboard';
 import { TimetableApp } from './TimetableApp';
@@ -80,15 +79,43 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 export default function Home() {
   const [role, setRole] = useState<'loading' | 'manager' | 'teacher' | 'none'>('loading');
   const [initialProfile, setInitialProfile] = useState<SavedScheduleProfile | null>(null);
+  const [showDashboard, setShowDashboard] = useState(true);
+
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     void supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { setRole('none'); return; }
       const resolved = await getTimetableRole();
+      if (resolved === 'teacher') {
+        window.location.replace('/mobile-v2/teacher');
+        return;
+      }
       setRole(resolved);
     });
   }, []);
+
+  const handleLogin = async () => {
+    const resolved = await getTimetableRole();
+    if (resolved === 'teacher') {
+      window.location.replace('/mobile-v2/teacher');
+      return;
+    }
+    setRole(resolved);
+    setShowDashboard(true);
+  };
+
+  const handleLogout = () => {
+    const supabase = createSupabaseBrowserClient();
+    void supabase.auth.signOut();
+    setRole('none');
+    setInitialProfile(null);
+    setShowDashboard(true);
+  };
+
   if (role === 'loading') return <main className="min-h-screen grid place-items-center bg-slate-100 font-bold">جاري التحقق...</main>;
-  if (role === 'none') return <LoginScreen onLogin={() => { void getTimetableRole().then(setRole); }} />;
-  return role === 'teacher' ? <TimetableApp initialProfile={initialProfile} /> : <Dashboard onOpenProfile={(profile) => setInitialProfile(profile)} />;
+  if (role === 'none') return <LoginScreen onLogin={() => { void handleLogin(); }} />;
+  if (showDashboard) {
+    return <Dashboard onOpenProfile={(profile) => { setInitialProfile(profile); setShowDashboard(false); }} onCreateSchedule={() => { setInitialProfile(null); setShowDashboard(false); }} />;
+  }
+  return <TimetableApp initialProfile={initialProfile} openNewSchedule={!initialProfile} onBackToDashboard={() => { setInitialProfile(null); setShowDashboard(true); }} onLogout={handleLogout} />;
 }
