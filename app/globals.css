@@ -33,6 +33,20 @@ textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Keep timetable days and period headers visible while the matrix scrolls. */
+table.min-w-full thead th {
+  position: sticky;
+  z-index: 40;
+}
+
+table.min-w-full thead tr:first-child th {
+  top: 0;
+}
+
+table.min-w-full thead tr:nth-child(2) th {
+  top: 31px;
+}
+
 /* Prevent iOS Safari from zooming when focusing form controls. */
 @media (max-width: 767px) {
   input,
