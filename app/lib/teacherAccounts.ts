@@ -36,6 +36,20 @@ export async function syncTeacherAccounts(projectId: string, teachers: TeacherAc
       usersByEmail.set(email, user);
     }
 
+    // A teacher code identifies one login account per project. If the same
+    // login account is already linked to another teacher in this project,
+    // keep the existing mapping instead of failing the whole project save
+    // on the unique (project_id, user_id) constraint.
+    const { data: existingAccount, error: existingAccountError } = await admin
+      .from('teacher_accounts')
+      .select('teacher_id')
+      .eq('project_id', projectId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existingAccountError) throw existingAccountError;
+    if (existingAccount && existingAccount.teacher_id !== teacherId) continue;
+
     const { error: accountError } = await admin
       .from('teacher_accounts')
       .upsert(
