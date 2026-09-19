@@ -83,7 +83,18 @@ export default function Home() {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    void supabase.auth.getSession().then(async ({ data }) => {
+    const AUTH_RESET_VERSION = '2026-09-19';
+
+    void (async () => {
+      const storedVersion = window.localStorage.getItem('timetables-auth-reset-version');
+      if (storedVersion !== AUTH_RESET_VERSION) {
+        await supabase.auth.signOut();
+        window.localStorage.setItem('timetables-auth-reset-version', AUTH_RESET_VERSION);
+        setRole('none');
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
       if (!data.session) { setRole('none'); return; }
       const resolved = await getTimetableRole();
       if (resolved === 'teacher') {
@@ -91,7 +102,7 @@ export default function Home() {
         return;
       }
       setRole(resolved);
-    });
+    })();
   }, []);
 
   const handleLogin = async () => {
