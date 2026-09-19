@@ -20,10 +20,11 @@ async function getTimetableRole(): Promise<'manager' | 'teacher' | 'none'> {
   return 'none';
 }
 
-function LoginScreen({ onLogin }: { onLogin: () => void }) {
+function LoginScreen({ onLogin }: { onLogin: () => Promise<'manager' | 'teacher' | 'none'> }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,6 +34,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
     }
     try {
       setError('');
+      setIsSubmitting(true);
       const supabase = createSupabaseBrowserClient();
       let loginEmail = email.trim();
       let loginPassword = password;
@@ -42,13 +44,20 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
       }
       const { error: authError } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword });
       if (authError) {
-        setError('بيانات الدخول غير صحيحة أو الحساب غير مفعّل.');
+        setError(authError.message || 'بيانات الدخول غير صحيحة أو الحساب غير مفعّل.');
+        setIsSubmitting(false);
         return;
       }
-      onLogin();
+      const role = await onLogin();
+      if (role === 'none') {
+        await supabase.auth.signOut();
+        setError('تم تسجيل الدخول، لكن هذا الحساب غير مرتبط بصلاحية في التطبيق.');
+      }
     } catch (authError) {
       console.error(authError);
       setError('تعذر الاتصال بخدمة تسجيل الدخول. تأكد من إعداد Supabase.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,7 +78,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
               <div className="mt-6"><p className="text-[11px] text-white/55">كل مشروع مستقل، وكل جدول يبدأ من اختيارك.</p><div className="mt-2 text-[10px] font-semibold text-white/45">© 2026 TimeTables · Developed by مصطفى لعرعاري · MUSTAPHA LAARAARI</div></div>
             </div>
           </section>
-          <section className="flex items-center bg-white p-6 sm:p-7 lg:w-1/2 lg:p-8"><div className="mx-auto w-full max-w-md"><div className="mb-4"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-[#20518D]"><Users className="h-5 w-5" /></div><h2 className="text-2xl font-black text-slate-900">مرحباً بك</h2><p className="mt-1 text-xs leading-5 text-slate-500">سجّل الدخول للانتقال إلى مساحة مشاريعك.</p></div><form onSubmit={handleSubmit} className="space-y-3"><div><label htmlFor="login-email" className="mb-1.5 block text-xs font-black text-slate-700">البريد الإلكتروني</label><div className="relative"><Users className="absolute right-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" /><input id="login-email" type="text" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com أو PROF001" autoComplete="username" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-10 pl-4 text-sm text-slate-900 outline-none transition focus:border-[#2B68B1] focus:bg-white focus:ring-4 focus:ring-blue-100" /></div></div><div><label htmlFor="login-password" className="mb-1.5 block text-xs font-black text-slate-700">كلمة المرور</label><input id="login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="أدخل كلمة المرور" autoComplete="current-password" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-[#2B68B1] focus:bg-white focus:ring-4 focus:ring-blue-100" /></div>{error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700">{error}</div>}<button type="submit" className="w-full rounded-xl bg-gradient-to-r from-[#20518D] to-[#2B68B1] py-2.5 text-sm font-black text-white shadow-lg transition hover:brightness-110 active:scale-[0.99]">تسجيل الدخول</button></form></div></section>
+          <section className="flex items-center bg-white p-6 sm:p-7 lg:w-1/2 lg:p-8"><div className="mx-auto w-full max-w-md"><div className="mb-4"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-[#20518D]"><Users className="h-5 w-5" /></div><h2 className="text-2xl font-black text-slate-900">مرحباً بك</h2><p className="mt-1 text-xs leading-5 text-slate-500">سجّل الدخول للانتقال إلى مساحة مشاريعك.</p></div><form onSubmit={handleSubmit} className="space-y-3"><div><label htmlFor="login-email" className="mb-1.5 block text-xs font-black text-slate-700">البريد الإلكتروني</label><div className="relative"><Users className="absolute right-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" /><input id="login-email" type="text" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com أو PROF001" autoComplete="username" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-10 pl-4 text-sm text-slate-900 outline-none transition focus:border-[#2B68B1] focus:bg-white focus:ring-4 focus:ring-blue-100" /></div></div><div><label htmlFor="login-password" className="mb-1.5 block text-xs font-black text-slate-700">كلمة المرور</label><input id="login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="أدخل كلمة المرور" autoComplete="current-password" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-[#2B68B1] focus:bg-white focus:ring-4 focus:ring-blue-100" /></div>{error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700">{error}</div>}<button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-gradient-to-r from-[#20518D] to-[#2B68B1] py-2.5 text-sm font-black text-white shadow-lg transition hover:brightness-110 active:scale-[0.99]">{isSubmitting ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}</button></form></div></section>
         </div>
       </div>
     </main>
@@ -99,13 +108,13 @@ export default function Home() {
       const resolved = await getTimetableRole();
       if (resolved === 'teacher') {
         window.location.replace('/mobile-v2/teacher');
-        return;
+        return 'teacher';
       }
       setRole(resolved);
     })();
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = async (): Promise<'manager' | 'teacher' | 'none'> => {
     const resolved = await getTimetableRole();
     if (resolved === 'teacher') {
       window.location.replace('/mobile-v2/teacher');
@@ -113,6 +122,7 @@ export default function Home() {
     }
     setRole(resolved);
     setShowDashboard(true);
+    return resolved;
   };
 
   const handleLogout = () => {
@@ -124,7 +134,7 @@ export default function Home() {
   };
 
   if (role === 'loading') return <main className="min-h-screen grid place-items-center bg-slate-100 font-bold">جاري التحقق...</main>;
-  if (role === 'none') return <LoginScreen onLogin={() => { void handleLogin(); }} />;
+  if (role === 'none') return <LoginScreen onLogin={handleLogin} />;
   if (showDashboard) {
     return <Dashboard onOpenProfile={(profile) => { setInitialProfile(profile); setShowDashboard(false); }} onCreateSchedule={() => { setInitialProfile(null); setShowDashboard(false); }} />;
   }
